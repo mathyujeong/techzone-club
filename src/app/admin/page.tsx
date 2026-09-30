@@ -15,14 +15,14 @@ export default function AdminPage() {
   const [p2Input, setP2Input] = useState("");
   const [editMatchModal, setEditMatchModal] = useState<{ id: string, round: number, court: number, type: string, bluePen: number, whitePen: number } | null>(null);
 
-  useEffect(() => {
-    if (authed) fetchMatches();
-  }, [authed]);
-
   async function fetchMatches() {
     const { data } = await supabase.from('matches').select('*').order('round_num').order('court_num');
     if (data) setMatches(data);
   }
+
+  useEffect(() => {
+    if (authed) fetchMatches();
+  }, [authed]);
 
   async function setWinner(id: string, team: 'blue' | 'white') {
     const blueScore = team === 'blue' ? 1 : 0;
@@ -63,7 +63,7 @@ export default function AdminPage() {
       return;
     }
 
-    const updateData: any = team === 'blue' 
+    const updateData: Record<string, string> = team === 'blue' 
       ? { blue_player1: finalP1, blue_player2: finalP2 } 
       : { white_player1: finalP1, white_player2: finalP2 };
 

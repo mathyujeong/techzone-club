@@ -8,6 +8,17 @@ export default function TournamentPage() {
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  async function fetchMatches() {
+    const { data, error } = await supabase
+      .from('matches')
+      .select('*')
+      .order('round_num', { ascending: true })
+      .order('court_num', { ascending: true });
+    
+    if (data) setMatches(data);
+    setLoading(false);
+  }
+
   useEffect(() => {
     fetchMatches();
 
@@ -23,17 +34,6 @@ export default function TournamentPage() {
       supabase.removeChannel(subscription);
     };
   }, []);
-
-  async function fetchMatches() {
-    const { data, error } = await supabase
-      .from('matches')
-      .select('*')
-      .order('round_num', { ascending: true })
-      .order('court_num', { ascending: true });
-    
-    if (data) setMatches(data);
-    setLoading(false);
-  }
 
   // 라운드별로 그룹화
   const roundNums = Array.from(new Set(matches.map(m => m.round_num))).sort((a, b) => a - b);
