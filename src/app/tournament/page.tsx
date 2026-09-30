@@ -103,7 +103,7 @@ export default function TournamentPage() {
               <ul className="space-y-2">
                 {blueTeamStats.map(([name, count]) => (
                   <li key={name} className="flex justify-between items-center text-sm">
-                    <span className="text-gray-700 dark:text-gray-300 truncate font-medium">{name.split('(')[0]}</span>
+                    <span className="text-gray-700 dark:text-gray-300 truncate font-medium">{name}</span>
                     <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded font-bold text-xs">{count}게임</span>
                   </li>
                 ))}
@@ -115,7 +115,7 @@ export default function TournamentPage() {
               <ul className="space-y-2">
                 {whiteTeamStats.map(([name, count]) => (
                   <li key={name} className="flex justify-between items-center text-sm">
-                    <span className="text-gray-700 dark:text-gray-300 truncate font-medium">{name.split('(')[0]}</span>
+                    <span className="text-gray-700 dark:text-gray-300 truncate font-medium">{name}</span>
                     <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded font-bold text-xs">{count}게임</span>
                   </li>
                 ))}
