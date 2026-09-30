@@ -58,6 +58,9 @@ export default function TournamentPage() {
     .filter(([name]) => matches.some(m => m.white_player1 === name || m.white_player2 === name))
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
+  const totalBlueWins = matches.filter(m => m.status === 'completed' && m.blue_score > m.white_score).length;
+  const totalWhiteWins = matches.filter(m => m.status === 'completed' && m.white_score > m.blue_score).length;
+
   if (loading) {
     return <div className="text-center py-20 text-gray-500 animate-pulse">대진표와 실시간 점수를 불러오는 중입니다...</div>;
   }
@@ -65,11 +68,27 @@ export default function TournamentPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-12 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold flex items-center justify-center gap-3 mb-4">
-          <Trophy className="w-8 h-8 text-yellow-500" />
+        <h1 className="text-3xl md:text-4xl font-black flex items-center justify-center gap-3 mb-8">
+          <Trophy className="w-10 h-10 text-yellow-500" />
           제 1회 월례회 대진표
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 font-medium">실시간 경기 결과</p>
+        
+        {/* 상단 스코어 보드 */}
+        <div className="flex justify-center items-center gap-4 md:gap-12 mb-6 max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-xl border-4 border-gray-50 dark:border-gray-800">
+          <div className="flex-1 text-center">
+            <h2 className="text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400 mb-2">청팀</h2>
+            <div className="text-6xl md:text-8xl font-black text-blue-600 dark:text-blue-400 tracking-tighter">{totalBlueWins}</div>
+          </div>
+          
+          <div className="text-gray-300 dark:text-gray-700 font-black text-3xl md:text-5xl italic px-4">VS</div>
+          
+          <div className="flex-1 text-center">
+            <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">백팀</h2>
+            <div className="text-6xl md:text-8xl font-black text-gray-800 dark:text-gray-200 tracking-tighter">{totalWhiteWins}</div>
+          </div>
+        </div>
+        
+        <p className="text-gray-500 dark:text-gray-400 font-bold text-sm tracking-widest uppercase">Live Scoreboard</p>
       </div>
 
       <div className="flex flex-col xl:flex-row-reverse gap-8 items-start">
@@ -120,41 +139,55 @@ export default function TournamentPage() {
                 {round.matches.map((match: any, idx: number) => {
                   const [actualType, bluePen, whitePen] = (match.match_type || '').split(':');
                   return (
-                  <div key={idx} className={`rounded-xl p-4 border ${match.status === 'completed' ? 'bg-gray-100 border-gray-300 opacity-60 dark:bg-gray-900 dark:border-gray-800' : 'bg-gray-50 border-gray-200 dark:bg-gray-950 dark:border-gray-800'}`}>
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded dark:bg-yellow-900 dark:text-yellow-300">
+                  <div key={idx} className={`rounded-2xl p-5 border shadow-sm transition-all ${match.status === 'completed' ? 'bg-white border-gray-200 dark:bg-gray-900 dark:border-gray-800' : 'bg-gray-50 border-gray-200 dark:bg-gray-950 dark:border-gray-800 hover:shadow-md'}`}>
+                    <div className="flex justify-between items-center mb-5">
+                      <span className="bg-yellow-400 text-yellow-950 text-xs font-black px-3 py-1.5 rounded-lg dark:bg-yellow-500 dark:text-yellow-950 shadow-sm">
                         코트 {match.court_num}
                       </span>
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
                         {actualType === 'MD' ? '남자 복식' : actualType === 'WD' ? '여자 복식' : '혼합 복식'}
                       </span>
                     </div>
                     
-                    <div className="flex justify-between items-center gap-2">
-                      <div className={`flex-1 text-center py-3 px-1 rounded-lg border ${match.status === 'completed' && match.blue_score > match.white_score ? 'bg-blue-100 border-blue-300 dark:bg-blue-900/40 dark:border-blue-700' : 'bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800/50'}`}>
-                        <div className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1 flex justify-center items-center gap-1">청팀 {bluePen && bluePen !== '0' && <span className="text-[10px] bg-blue-200/50 px-1 rounded text-blue-800">패널티 {bluePen}</span>}</div>
-                        <div className="font-semibold text-sm text-gray-900 dark:text-gray-100">{match.blue_player1}</div>
-                        <div className="font-semibold text-sm text-gray-900 dark:text-gray-100">{match.blue_player2}</div>
-                        <div className="mt-2 h-6 flex items-center justify-center">
-                          {match.status === 'completed' && match.blue_score > match.white_score && (
-                            <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">승리</span>
-                          )}
-                        </div>
+                    <div className="flex justify-between items-center gap-3">
+                      <div className={`flex-1 text-center py-5 px-2 rounded-xl border-2 transition-all relative ${
+                        match.status === 'completed' && match.blue_score > match.white_score 
+                          ? 'bg-blue-50 border-blue-500 shadow-lg scale-105 z-10 dark:bg-blue-900/40 dark:border-blue-400' 
+                          : match.status === 'completed' 
+                            ? 'bg-gray-50 border-gray-100 opacity-40 grayscale dark:bg-gray-900/20 dark:border-gray-800' 
+                            : 'bg-blue-50/50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/50'
+                      }`}>
+                        <div className="text-xs font-black text-blue-600 dark:text-blue-400 mb-2 flex justify-center items-center gap-1">청팀 {bluePen && bluePen !== '0' && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full">패널티 {bluePen}</span>}</div>
+                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed">{match.blue_player1}</div>
+                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed">{match.blue_player2}</div>
+                        
+                        {match.status === 'completed' && match.blue_score > match.white_score && (
+                          <div className="absolute -top-3 -right-3">
+                            <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md border-2 border-white dark:border-gray-900">WIN</span>
+                          </div>
+                        )}
                       </div>
                       
-                      <div className="text-gray-400 flex-shrink-0">
-                        <span className="text-gray-300 dark:text-gray-600 font-black italic text-sm">VS</span>
+                      <div className="text-gray-300 flex-shrink-0 flex flex-col justify-center">
+                        <span className="text-gray-300 dark:text-gray-600 font-black italic text-base">VS</span>
                       </div>
                       
-                      <div className={`flex-1 text-center py-3 px-1 rounded-lg border ${match.status === 'completed' && match.white_score > match.blue_score ? 'bg-gray-200 border-gray-400 dark:bg-gray-800/80 dark:border-gray-600' : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'} shadow-sm`}>
-                        <div className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 flex justify-center items-center gap-1">백팀 {whitePen && whitePen !== '0' && <span className="text-[10px] bg-gray-200/50 px-1 rounded text-gray-800">패널티 {whitePen}</span>}</div>
-                        <div className="font-semibold text-sm text-gray-900 dark:text-gray-100">{match.white_player1}</div>
-                        <div className="font-semibold text-sm text-gray-900 dark:text-gray-100">{match.white_player2}</div>
-                        <div className="mt-2 h-6 flex items-center justify-center">
-                          {match.status === 'completed' && match.white_score > match.blue_score && (
-                            <span className="bg-gray-800 dark:bg-gray-200 text-white dark:text-black text-xs font-bold px-3 py-1 rounded-full shadow-sm">승리</span>
-                          )}
-                        </div>
+                      <div className={`flex-1 text-center py-5 px-2 rounded-xl border-2 transition-all relative ${
+                        match.status === 'completed' && match.white_score > match.blue_score 
+                          ? 'bg-gray-100 border-gray-800 shadow-lg scale-105 z-10 dark:bg-gray-800 dark:border-gray-300' 
+                          : match.status === 'completed' 
+                            ? 'bg-gray-50 border-gray-100 opacity-40 grayscale dark:bg-gray-900/20 dark:border-gray-800' 
+                            : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
+                      }`}>
+                        <div className="text-xs font-black text-gray-600 dark:text-gray-400 mb-2 flex justify-center items-center gap-1">백팀 {whitePen && whitePen !== '0' && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full">패널티 {whitePen}</span>}</div>
+                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed">{match.white_player1}</div>
+                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed">{match.white_player2}</div>
+                        
+                        {match.status === 'completed' && match.white_score > match.blue_score && (
+                          <div className="absolute -top-3 -right-3">
+                            <span className="bg-gray-800 dark:bg-gray-200 text-white dark:text-black text-[10px] font-black px-2 py-1 rounded-full shadow-md border-2 border-white dark:border-gray-900">WIN</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
