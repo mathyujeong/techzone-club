@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [p1Input, setP1Input] = useState("");
   const [p2Select, setP2Select] = useState("");
   const [p2Input, setP2Input] = useState("");
+  const [editMatchModal, setEditMatchModal] = useState<{ id: string, round: number, court: number, type: string, bluePen: number, whitePen: number } | null>(null);
 
   useEffect(() => {
     if (authed) fetchMatches();
@@ -71,20 +72,25 @@ export default function AdminPage() {
     setEditPlayerModal(null);
   }
 
-  async function editMatchInfo(id: string, currentCourt: number, currentType: string, bluePen: string, whitePen: string) {
-    const newCourt = prompt("코트 번호를 입력하세요:", currentCourt.toString());
-    if (newCourt === null) return;
-    const newType = prompt("경기 종류 (MD: 남복, WD: 여복, XD: 혼복):", currentType);
-    if (newType === null) return;
-    const newBluePen = prompt("청팀 패널티:", bluePen || "0");
-    if (newBluePen === null) return;
-    const newWhitePen = prompt("백팀 패널티:", whitePen || "0");
-    if (newWhitePen === null) return;
+  function openEditMatch(id: string, round: number, court: number, actualType: string, bluePen: string, whitePen: string) {
+    setEditMatchModal({
+      id,
+      round: round || 1,
+      court: court || 1,
+      type: actualType || 'MD',
+      bluePen: parseInt(bluePen) || 0,
+      whitePen: parseInt(whitePen) || 0,
+    });
+  }
 
-    const match_type = `${newType.toUpperCase()}:${newBluePen}:${newWhitePen}`;
+  async function saveMatchInfo() {
+    if (!editMatchModal) return;
+    const { id, round, court, type, bluePen, whitePen } = editMatchModal;
+    const match_type = `${type}:${bluePen}:${whitePen}`;
     
-    setMatches(matches.map(m => m.id === id ? { ...m, court_num: parseInt(newCourt) || currentCourt, match_type } : m));
-    await supabase.from('matches').update({ court_num: parseInt(newCourt) || currentCourt, match_type }).eq('id', id);
+    setMatches(matches.map(m => m.id === id ? { ...m, round_num: round, court_num: court, match_type } : m));
+    await supabase.from('matches').update({ round_num: round, court_num: court, match_type }).eq('id', id);
+    setEditMatchModal(null);
   }
 
   async function addMatch() {
@@ -160,6 +166,107 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20">
+
+            {editMatchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6 border border-gray-200 dark:border-gray-800">
+            <h2 className="text-xl font-bold mb-6 text-gray-800 dark:text-gray-200">경기 정보 수정</h2>
+            
+            <div className="space-y-4 mb-8">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">라운드</label>
+                  <div className="relative">
+                    <select 
+                      value={editMatchModal.round} 
+                      onChange={e => setEditMatchModal({...editMatchModal, round: parseInt(e.target.value)})} 
+                      className="w-full appearance-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 outline-none text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 transition-all font-medium cursor-pointer shadow-sm"
+                    >
+                      {[...Array(15)].map((_, i) => <option key={i+1} value={i+1}>{i+1} 라운드</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-3.5 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+                
+                <div className="flex-1">
+                  <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">코트 번호</label>
+                  <div className="relative">
+                    <select 
+                      value={editMatchModal.court} 
+                      onChange={e => setEditMatchModal({...editMatchModal, court: parseInt(e.target.value)})} 
+                      className="w-full appearance-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 outline-none text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 transition-all font-medium cursor-pointer shadow-sm"
+                    >
+                      {[...Array(10)].map((_, i) => <option key={i+1} value={i+1}>{i+1} 코트</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-3.5 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">종목</label>
+                <div className="relative">
+                  <select 
+                    value={editMatchModal.type} 
+                    onChange={e => setEditMatchModal({...editMatchModal, type: e.target.value})} 
+                    className="w-full appearance-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 outline-none text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 transition-all font-medium cursor-pointer shadow-sm"
+                  >
+                    <option value="MD">남자 복식 (남복)</option>
+                    <option value="WD">여자 복식 (여복)</option>
+                    <option value="XD">혼합 복식 (혼복)</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-3.5 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-bold mb-2 text-blue-600 dark:text-blue-400">청팀 패널티</label>
+                  <div className="relative">
+                    <select 
+                      value={editMatchModal.bluePen} 
+                      onChange={e => setEditMatchModal({...editMatchModal, bluePen: parseInt(e.target.value)})} 
+                      className="w-full appearance-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 outline-none text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all font-medium cursor-pointer shadow-sm"
+                    >
+                      {[...Array(21)].map((_, i) => <option key={i} value={i}>{i}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-3.5 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+                
+                <div className="flex-1">
+                  <label className="block text-sm font-bold mb-2 text-gray-600 dark:text-gray-400">백팀 패널티</label>
+                  <div className="relative">
+                    <select 
+                      value={editMatchModal.whitePen} 
+                      onChange={e => setEditMatchModal({...editMatchModal, whitePen: parseInt(e.target.value)})} 
+                      className="w-full appearance-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 outline-none text-gray-900 dark:text-white focus:ring-2 focus:ring-gray-500 transition-all font-medium cursor-pointer shadow-sm"
+                    >
+                      {[...Array(21)].map((_, i) => <option key={i} value={i}>{i}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-3.5 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setEditMatchModal(null)} 
+                className="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3.5 rounded-xl font-bold"
+              >
+                취소
+              </button>
+              <button 
+                onClick={saveMatchInfo} 
+                className="flex-1 bg-yellow-500 text-white py-3.5 rounded-xl font-bold"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editPlayerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -312,7 +419,7 @@ export default function AdminPage() {
                     <div className="bg-gray-100 dark:bg-gray-800 p-1 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
                       <div 
                         className="font-bold text-gray-800 dark:text-gray-200 text-[10px] cursor-pointer"
-                        onClick={() => editMatchInfo(m.id, m.court_num, actualType, bluePen, whitePen)}
+                        onClick={() => openEditMatch(m.id, m.round_num, m.court_num, actualType, bluePen, whitePen)}
                       >
                         {m.court_num}코트 <span className="text-gray-500">({tName})</span>
                       </div>
