@@ -118,8 +118,8 @@ for i, r in enumerate(rounds):
     for j, m in enumerate(r):
         out.append({
             "round": i+1, "court": j+1, "type": m[0],
-            "blue_team": [p['name'] for p in m[1]],
-            "white_team": [p['name'] for p in m[2]],
+            "blue_team": [f"{p['name']}({p['grade']})" for p in m[1]],
+            "white_team": [f"{p['name']}({p['grade']})" for p in m[2]],
             "blue_score": sum(p['score'] for p in m[1]),
             "white_score": sum(p['score'] for p in m[2])
         })
