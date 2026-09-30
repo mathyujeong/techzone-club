@@ -306,15 +306,15 @@ export default function AdminPage() {
                 {roundMatches.map(m => {
                   const [actualType, bluePen, whitePen] = (m.match_type || '').split(':');
                   return (
-                  <div key={m.id} className={`flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-sm border overflow-hidden text-xs ${m.status === 'completed' ? 'border-gray-200 opacity-60' : 'border-blue-100 dark:border-blue-900/30'}`}>
+                  <div key={m.id} className={`flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-sm border overflow-hidden ${m.status === 'completed' ? 'border-gray-200 opacity-60' : 'border-blue-200 dark:border-blue-900/50'}`}>
                     {/* 코트 번호 헤더 */}
-                    <div className="bg-gray-100 dark:bg-gray-800 p-1.5 flex flex-col lg:flex-row justify-between items-center text-center gap-1">
-                      <span 
-                        className="font-bold text-gray-700 dark:text-gray-300 text-[10px] cursor-pointer hover:underline truncate w-full lg:w-auto"
+                    <div className="bg-gray-100 dark:bg-gray-800 p-2 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                      <div 
+                        className="font-black text-gray-800 dark:text-gray-200 text-[11px] sm:text-sm cursor-pointer hover:underline"
                         onClick={() => editMatchInfo(m.id, m.court_num, actualType, bluePen, whitePen)}
                       >
-                        코트 {m.court_num} <span className="hidden lg:inline">({actualType})</span>
-                      </span>
+                        C{m.court_num} <span className="font-medium text-gray-500 ml-0.5">({actualType})</span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <button 
                           onClick={async () => {
@@ -322,57 +322,63 @@ export default function AdminPage() {
                             await supabase.from('matches').update({ status: newStatus }).eq('id', m.id);
                             fetchMatches();
                           }}
-                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${m.status === 'completed' ? 'bg-gray-300 text-gray-700' : 'bg-red-500 text-white'}`}
+                          className="text-[10px] font-bold text-gray-500 hover:text-red-500 transition-colors p-1"
                         >
                           {m.status === 'completed' ? '재개' : '종료'}
                         </button>
-                        <button onClick={() => deleteMatch(m.id)} className="text-gray-400 hover:text-red-500 p-0.5" title="경기 삭제">
-                          <Trash2 className="w-3 h-3" />
+                        <button onClick={() => deleteMatch(m.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1" title="경기 삭제">
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
                     
                     <div className="flex flex-col flex-1 divide-y divide-gray-100 dark:divide-gray-800">
                       {/* 청팀 */}
-                      <div className={`p-1.5 flex flex-col flex-1 justify-center gap-1 ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
-                        <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 text-center mb-0.5">
-                          청팀 {bluePen && bluePen !== '0' && <span className="text-[9px] opacity-70">(-{bluePen})</span>}
+                      <div className={`p-2.5 flex justify-between items-center ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
+                        <div 
+                          className="font-bold text-[13px] sm:text-[15px] text-blue-700 dark:text-blue-400 cursor-pointer hover:underline leading-snug break-keep flex-1 pr-1"
+                          onClick={() => editPlayers(m.id, 'blue', m.blue_player1, m.blue_player2)}
+                        >
+                          {m.blue_player1}
+                          <br/>
+                          {m.blue_player2}
+                          {bluePen && bluePen !== '0' && <span className="block text-[10px] text-red-500 font-normal mt-0.5 opacity-80">패널티 {bluePen}</span>}
                         </div>
-                        <div className="flex flex-row items-center justify-between gap-1 w-full">
-                          <div 
-                            className="font-medium cursor-pointer hover:underline leading-tight text-left flex-1 break-keep"
-                            onClick={() => editPlayers(m.id, 'blue', m.blue_player1, m.blue_player2)}
-                          >
-                            {m.blue_player1}<br/>{m.blue_player2}
-                          </div>
-                          <button 
-                            onClick={() => setWinner(m.id, 'blue')} 
-                            className={`shrink-0 px-2 py-1.5 rounded text-[10px] font-black ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'}`}
-                          >
-                            {m.status === 'completed' && m.blue_score > m.white_score ? '승리' : '승'}
-                          </button>
-                        </div>
+                        
+                        <button 
+                          onClick={() => setWinner(m.id, 'blue')} 
+                          className={`shrink-0 flex flex-col justify-center items-center w-9 h-9 sm:w-10 sm:h-10 rounded-full border shadow-sm transition-all ${
+                            m.status === 'completed' && m.blue_score > m.white_score 
+                              ? 'bg-blue-600 border-blue-600 text-white shadow-md' 
+                              : 'bg-white border-blue-200 text-blue-500 hover:bg-blue-50 dark:bg-gray-800 dark:border-gray-700'
+                          }`}
+                        >
+                          <span className="text-[11px] font-black leading-none">{m.status === 'completed' && m.blue_score > m.white_score ? 'WIN' : '승'}</span>
+                        </button>
                       </div>
 
                       {/* 백팀 */}
-                      <div className={`p-1.5 flex flex-col flex-1 justify-center gap-1 ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
-                        <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300 text-center mb-0.5">
-                          백팀 {whitePen && whitePen !== '0' && <span className="text-[9px] opacity-70">(-{whitePen})</span>}
+                      <div className={`p-2.5 flex justify-between items-center ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                        <div 
+                          className="font-bold text-[13px] sm:text-[15px] text-gray-800 dark:text-gray-200 cursor-pointer hover:underline leading-snug break-keep flex-1 pr-1"
+                          onClick={() => editPlayers(m.id, 'white', m.white_player1, m.white_player2)}
+                        >
+                          {m.white_player1}
+                          <br/>
+                          {m.white_player2}
+                          {whitePen && whitePen !== '0' && <span className="block text-[10px] text-red-500 font-normal mt-0.5 opacity-80">패널티 {whitePen}</span>}
                         </div>
-                        <div className="flex flex-row items-center justify-between gap-1 w-full">
-                          <div 
-                            className="font-medium cursor-pointer hover:underline leading-tight text-left text-gray-800 dark:text-gray-200 flex-1 break-keep"
-                            onClick={() => editPlayers(m.id, 'white', m.white_player1, m.white_player2)}
-                          >
-                            {m.white_player1}<br/>{m.white_player2}
-                          </div>
-                          <button 
-                            onClick={() => setWinner(m.id, 'white')} 
-                            className={`shrink-0 px-2 py-1.5 rounded text-[10px] font-black ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-black shadow-sm' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
-                          >
-                            {m.status === 'completed' && m.white_score > m.blue_score ? '승리' : '승'}
-                          </button>
-                        </div>
+                        
+                        <button 
+                          onClick={() => setWinner(m.id, 'white')} 
+                          className={`shrink-0 flex flex-col justify-center items-center w-9 h-9 sm:w-10 sm:h-10 rounded-full border shadow-sm transition-all ${
+                            m.status === 'completed' && m.white_score > m.blue_score 
+                              ? 'bg-gray-800 border-gray-800 text-white shadow-md dark:bg-gray-200 dark:text-black dark:border-gray-200' 
+                              : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700'
+                          }`}
+                        >
+                          <span className="text-[11px] font-black leading-none">{m.status === 'completed' && m.white_score > m.blue_score ? 'WIN' : '승'}</span>
+                        </button>
                       </div>
                     </div>
                   </div>
