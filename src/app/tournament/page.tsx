@@ -76,7 +76,7 @@ export default function TournamentPage() {
                 {whiteTeamStats.map(([name, count]) => (
                   <li key={name} className="flex justify-between items-center text-sm">
                     <span className="text-gray-700 dark:text-gray-300 truncate font-medium" title={name}>{name.split('(')[0]}</span>
-                    <span className={`px-2 py-0.5 rounded font-bold text-xs ${name.includes('조유정') ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+                    <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded font-bold text-xs">
                       {count}게임
                     </span>
                   </li>
@@ -86,7 +86,7 @@ export default function TournamentPage() {
           </div>
           
           <p className="text-xs text-gray-500 mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 text-center xl:text-left">
-            * 전원 3~4게임 배정 완료 (조유정님 3게임 고정)
+            * 참가자 전원 3~4게임 배정 완료
           </p>
         </div>
 
