@@ -122,7 +122,27 @@ export default function TournamentPage() {
               </ul>
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 text-center xl:text-left">
+          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center justify-center gap-1">
+              <Trophy className="w-4 h-4 text-yellow-500" />
+              종목별 통계
+            </h3>
+            <div className="grid grid-cols-2 gap-2 mb-2 text-center text-sm font-bold">
+              <div className="bg-blue-50 border border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-300 py-1.5 rounded-lg">
+                남복 <span className="text-base font-black ml-1">{matches.filter(m => (m.match_type || '').startsWith('MD')).length}</span>
+              </div>
+              <div className="bg-pink-50 border border-pink-100 text-pink-700 dark:bg-pink-900/20 dark:border-pink-800/50 dark:text-pink-300 py-1.5 rounded-lg">
+                여복 <span className="text-base font-black ml-1">{matches.filter(m => (m.match_type || '').startsWith('WD')).length}</span>
+              </div>
+              <div className="bg-purple-50 border border-purple-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800/50 dark:text-purple-300 py-1.5 rounded-lg">
+                혼복 <span className="text-base font-black ml-1">{matches.filter(m => (m.match_type || '').startsWith('XD')).length}</span>
+              </div>
+              <div className="bg-gray-100 border border-gray-200 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 py-1.5 rounded-lg">
+                총 <span className="text-base font-black ml-1">{matches.length}</span>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-center xl:text-left">
             * 참가자 전원 경기 배정 완료
           </p>
         </div>

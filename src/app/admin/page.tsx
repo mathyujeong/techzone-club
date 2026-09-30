@@ -397,6 +397,27 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center justify-center gap-1">
+              <Trophy className="w-4 h-4 text-yellow-500" />
+              종목별 경기 통계
+            </h3>
+            <div className="flex gap-2 text-center text-sm font-bold">
+              <div className="flex-1 bg-blue-50 border border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-300 py-2 rounded-xl">
+                남복 <span className="text-lg font-black ml-1">{matches.filter(m => (m.match_type || '').startsWith('MD')).length}</span>
+              </div>
+              <div className="flex-1 bg-pink-50 border border-pink-100 text-pink-700 dark:bg-pink-900/20 dark:border-pink-800/50 dark:text-pink-300 py-2 rounded-xl">
+                여복 <span className="text-lg font-black ml-1">{matches.filter(m => (m.match_type || '').startsWith('WD')).length}</span>
+              </div>
+              <div className="flex-1 bg-purple-50 border border-purple-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800/50 dark:text-purple-300 py-2 rounded-xl">
+                혼복 <span className="text-lg font-black ml-1">{matches.filter(m => (m.match_type || '').startsWith('XD')).length}</span>
+              </div>
+              <div className="flex-1 bg-gray-100 border border-gray-200 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 py-2 rounded-xl">
+                총 <span className="text-lg font-black ml-1">{matches.length}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
