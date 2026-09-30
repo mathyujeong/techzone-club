@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Settings, Plus, Minus, Check, Play, Pause, RefreshCw, Trophy, Users, Trash2 } from "lucide-react";
+import { Settings, Plus, Minus, Check, Play, Pause, RefreshCw, Trophy, Users, Trash2, ChevronDown } from "lucide-react";
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
@@ -166,58 +166,64 @@ export default function AdminPage() {
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6 border border-gray-200 dark:border-gray-800">
             <h2 className="text-xl font-bold mb-4">{editPlayerModal.team === 'blue' ? '청팀' : '백팀'} 선수 교체</h2>
             
-            <div className="space-y-4 mb-6">
+            <div className="space-y-6 mb-8">
               <div>
-                <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">첫 번째 선수</label>
-                <select 
-                  value={p1Select} 
-                  onChange={e => {
-                    setP1Select(e.target.value);
-                    if(e.target.value !== '직접입력') setP1Input('');
-                  }} 
-                  className="w-full border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 outline-none mb-2 text-black dark:text-white"
-                >
-                  <option value="">-- 선택 --</option>
-                  {(editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(([name]) => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                  <option value="직접입력">+ 새 선수/게스트 직접입력</option>
-                </select>
+                <label className="block text-sm font-bold mb-2 text-gray-800 dark:text-gray-200">첫 번째 선수</label>
+                <div className="relative">
+                  <select 
+                    value={p1Select} 
+                    onChange={e => {
+                      setP1Select(e.target.value);
+                      if(e.target.value !== '직접입력') setP1Input('');
+                    }} 
+                    className="w-full appearance-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3.5 outline-none mb-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all font-medium cursor-pointer shadow-sm"
+                  >
+                    <option value="">-- 선택 --</option>
+                    {(editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(([name]) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                    <option value="직접입력">+ 새 선수/게스트 직접입력</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
                 {p1Select === '직접입력' && (
                   <input 
                     type="text" 
                     placeholder="선수 이름 입력"
                     value={p1Input}
                     onChange={e => setP1Input(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg p-2 outline-none text-black dark:text-white"
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl px-4 py-3.5 outline-none text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all shadow-sm"
                     autoFocus
                   />
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">두 번째 선수</label>
-                <select 
-                  value={p2Select} 
-                  onChange={e => {
-                    setP2Select(e.target.value);
-                    if(e.target.value !== '직접입력') setP2Input('');
-                  }} 
-                  className="w-full border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 outline-none mb-2 text-black dark:text-white"
-                >
-                  <option value="">-- 선택 --</option>
-                  {(editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(([name]) => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                  <option value="직접입력">+ 새 선수/게스트 직접입력</option>
-                </select>
+                <label className="block text-sm font-bold mb-2 text-gray-800 dark:text-gray-200">두 번째 선수</label>
+                <div className="relative">
+                  <select 
+                    value={p2Select} 
+                    onChange={e => {
+                      setP2Select(e.target.value);
+                      if(e.target.value !== '직접입력') setP2Input('');
+                    }} 
+                    className="w-full appearance-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3.5 outline-none mb-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all font-medium cursor-pointer shadow-sm"
+                  >
+                    <option value="">-- 선택 --</option>
+                    {(editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(([name]) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                    <option value="직접입력">+ 새 선수/게스트 직접입력</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
                 {p2Select === '직접입력' && (
                   <input 
                     type="text" 
                     placeholder="선수 이름 입력"
                     value={p2Input}
                     onChange={e => setP2Input(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg p-2 outline-none text-black dark:text-white"
+                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl px-4 py-3.5 outline-none text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all shadow-sm"
                   />
                 )}
               </div>
