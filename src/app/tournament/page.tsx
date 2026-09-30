@@ -99,7 +99,7 @@ export default function TournamentPage() {
                 {round.roundNum}라운드
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {round.matches.map((match: any, idx: number) => (
                   <div key={idx} className="bg-gray-50 dark:bg-gray-950 rounded-xl p-4 border border-gray-200 dark:border-gray-800">
                     <div className="flex justify-between items-center mb-4">
