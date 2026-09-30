@@ -14,20 +14,20 @@ def evaluate_match(t1, t2):
     s2 = sum(p['score'] for p in t2)
     diff = abs(s1 - s2)
     
-    pen = 0
+    pen = (diff ** 2) * 100
     if len(t1) == 2:
         d1 = abs(get_grade_val(t1[0]['grade']) - get_grade_val(t1[1]['grade']))
-        if d1 >= 4: pen += 100
-        elif d1 == 3: pen += 20
+        if d1 >= 4: pen += 5000
+        elif d1 == 3: pen += 1000
         d2 = abs(get_grade_val(t2[0]['grade']) - get_grade_val(t2[1]['grade']))
-        if d2 >= 4: pen += 100
-        elif d2 == 3: pen += 20
-    return diff * 10 + pen
+        if d2 >= 4: pen += 5000
+        elif d2 == 3: pen += 1000
+    return pen
 
 best_schedule = None
 best_cost = 999999
 
-for _ in range(20000):
+for _ in range(50000):
     bm_counts = [3]*5; bm_counts[0]+=1; bm_counts[1]+=1; bm_counts[2]+=1
     wm_counts = [3]*6
     bw_counts = [3]*7; bw_counts[0]+=1
