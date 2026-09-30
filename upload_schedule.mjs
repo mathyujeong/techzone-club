@@ -18,13 +18,14 @@ const schedule = JSON.parse(rawData);
 async function upload() {
   console.log('🚀 Supabase로 대진표 데이터 업로드 시작...');
   
-  // 기존 데이터 삭제
-  await supabase.from('matches').delete().neq('round_num', -1);
+  // 기존 데이터 삭제 (RLS 에러 날 수 있으니 확인)
+  const { error: delErr } = await supabase.from('matches').delete().neq('round_num', -1);
+  if (delErr) console.warn('⚠️ 삭제 실패 (새로 추가됩니다):', delErr.message);
   
   const insertData = schedule.map(m => ({
     round_num: m.round,
     court_num: m.court,
-    match_type: m.type,
+    match_type: `${m.type}:${m.blue_score}:${m.white_score}`, // type:blue_penalty:white_penalty
     blue_player1: m.blue_team[0],
     blue_player2: m.blue_team[1],
     white_player1: m.white_team[0],

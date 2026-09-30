@@ -104,11 +104,13 @@ export default function AdminPage() {
               </h2>
               
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {roundMatches.map(m => (
+                {roundMatches.map(m => {
+                  const [actualType, bluePen, whitePen] = (m.match_type || '').split(':');
+                  return (
                   <div key={m.id} className={`bg-white dark:bg-gray-900 rounded-2xl shadow-sm border overflow-hidden ${m.status === 'completed' ? 'border-gray-200 opacity-60' : 'border-blue-100 dark:border-blue-900/30'}`}>
                     {/* 코트 번호 헤더 */}
                     <div className="bg-gray-100 dark:bg-gray-800 px-4 py-2 flex justify-between items-center">
-                      <span className="font-black text-gray-700 dark:text-gray-300">코트 {m.court_num}</span>
+                      <span className="font-black text-gray-700 dark:text-gray-300">코트 {m.court_num} ({actualType === 'MD' ? '남복' : actualType === 'WD' ? '여복' : '혼복'})</span>
                       <button 
                         onClick={async () => {
                           const newStatus = m.status === 'completed' ? 'pending' : 'completed';
@@ -124,7 +126,9 @@ export default function AdminPage() {
                     <div className="p-4 flex flex-col md:flex-row gap-4">
                       {/* 청팀 컨트롤 */}
                       <div className="flex-1 bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-800/50 flex flex-col items-center">
-                        <div className="text-blue-600 dark:text-blue-400 font-black mb-2 text-lg">청팀</div>
+                        <div className="text-blue-600 dark:text-blue-400 font-black mb-2 text-lg flex items-center gap-2">
+                          청팀 <span className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-100 text-xs px-2 py-1 rounded-full">패널티 {bluePen}</span>
+                        </div>
                         <div className="text-gray-700 dark:text-gray-300 font-medium mb-4 text-center h-12">
                           {m.blue_player1}<br/>{m.blue_player2}
                         </div>
@@ -148,7 +152,9 @@ export default function AdminPage() {
 
                       {/* 백팀 컨트롤 */}
                       <div className="flex-1 bg-gray-50 dark:bg-gray-800/30 rounded-xl p-4 border border-gray-200 dark:border-gray-800 flex flex-col items-center">
-                        <div className="text-gray-700 dark:text-gray-300 font-black mb-2 text-lg">백팀</div>
+                        <div className="text-gray-700 dark:text-gray-300 font-black mb-2 text-lg flex items-center gap-2">
+                          백팀 <span className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded-full">패널티 {whitePen}</span>
+                        </div>
                         <div className="text-gray-700 dark:text-gray-300 font-medium mb-4 text-center h-12">
                           {m.white_player1}<br/>{m.white_player2}
                         </div>

@@ -117,36 +117,40 @@ export default function TournamentPage() {
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {round.matches.map((match: any, idx: number) => (
+                {round.matches.map((match: any, idx: number) => {
+                  const [actualType, bluePen, whitePen] = (match.match_type || '').split(':');
+                  return (
                   <div key={idx} className={`rounded-xl p-4 border ${match.status === 'completed' ? 'bg-gray-100 border-gray-300 opacity-60 dark:bg-gray-900 dark:border-gray-800' : 'bg-gray-50 border-gray-200 dark:bg-gray-950 dark:border-gray-800'}`}>
                     <div className="flex justify-between items-center mb-4">
                       <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded dark:bg-yellow-900 dark:text-yellow-300">
                         코트 {match.court_num}
                       </span>
                       <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        {match.match_type === 'MD' ? '남자 복식' : match.match_type === 'WD' ? '여자 복식' : '혼합 복식'}
+                        {actualType === 'MD' ? '남자 복식' : actualType === 'WD' ? '여자 복식' : '혼합 복식'}
                       </span>
                     </div>
                     
                     <div className="flex justify-between items-center gap-2">
                       <div className={`flex-1 text-center py-3 px-1 rounded-lg border ${match.blue_score > match.white_score ? 'bg-blue-100 border-blue-300 dark:bg-blue-900/40 dark:border-blue-700' : 'bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800/50'}`}>
-                        <div className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">청팀 ({match.blue_score})</div>
+                        <div className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1 flex justify-center items-center gap-1">청팀 <span className="text-[10px] bg-blue-200/50 px-1 rounded text-blue-800">패널티 {bluePen}</span></div>
                         <div className="font-semibold text-sm text-gray-900 dark:text-gray-100">{match.blue_player1}</div>
                         <div className="font-semibold text-sm text-gray-900 dark:text-gray-100">{match.blue_player2}</div>
+                        <div className="mt-3 text-3xl font-black text-blue-600 dark:text-blue-400">{match.blue_score}</div>
                       </div>
                       
                       <div className="text-gray-400 flex-shrink-0">
-                        <Swords className="w-4 h-4" />
+                        <span className="text-gray-300 dark:text-gray-600 font-black italic text-sm">VS</span>
                       </div>
                       
                       <div className={`flex-1 text-center py-3 px-1 rounded-lg border ${match.white_score > match.blue_score ? 'bg-yellow-100 border-yellow-300 dark:bg-yellow-900/40 dark:border-yellow-700' : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'} shadow-sm`}>
-                        <div className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">백팀 ({match.white_score})</div>
+                        <div className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1 flex justify-center items-center gap-1">백팀 <span className="text-[10px] bg-gray-200/50 px-1 rounded text-gray-800">패널티 {whitePen}</span></div>
                         <div className="font-semibold text-sm text-gray-900 dark:text-gray-100">{match.white_player1}</div>
                         <div className="font-semibold text-sm text-gray-900 dark:text-gray-100">{match.white_player2}</div>
+                        <div className="mt-3 text-3xl font-black text-gray-800 dark:text-gray-200">{match.white_score}</div>
                       </div>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           ))}
