@@ -18,17 +18,47 @@ export default function AdminPage() {
     if (data) setMatches(data);
   }
 
-  async function updateScore(id: string, team: 'blue' | 'white', delta: number) {
-    const match = matches.find(m => m.id === id);
-    if(!match) return;
-    const newScore = team === 'blue' ? match.blue_score + delta : match.white_score + delta;
-    if(newScore < 0) return;
+  async function setWinner(id: string, team: 'blue' | 'white') {
+    const blueScore = team === 'blue' ? 1 : 0;
+    const whiteScore = team === 'white' ? 1 : 0;
     
-    // UI 낙관적 업데이트
-    setMatches(matches.map(m => m.id === id ? { ...m, [`${team}_score`]: newScore } : m));
+    setMatches(matches.map(m => m.id === id ? { ...m, blue_score: blueScore, white_score: whiteScore, status: 'completed' } : m));
     
-    // DB 업데이트
-    await supabase.from('matches').update({ [`${team}_score`]: newScore }).eq('id', id);
+    await supabase.from('matches').update({ 
+      blue_score: blueScore, 
+      white_score: whiteScore, 
+      status: 'completed' 
+    }).eq('id', id);
+  }
+
+  async function editPlayers(id: string, team: 'blue' | 'white', p1: string, p2: string) {
+    const newP1 = prompt(`${team === 'blue' ? '청팀' : '백팀'} 첫 번째 선수 이름:`, p1);
+    if (newP1 === null) return;
+    const newP2 = prompt(`${team === 'blue' ? '청팀' : '백팀'} 두 번째 선수 이름:`, p2);
+    if (newP2 === null) return;
+
+    const updateData = team === 'blue' 
+      ? { blue_player1: newP1, blue_player2: newP2 } 
+      : { white_player1: newP1, white_player2: newP2 };
+      
+    setMatches(matches.map(m => m.id === id ? { ...m, ...updateData } : m));
+    await supabase.from('matches').update(updateData).eq('id', id);
+  }
+
+  async function editMatchInfo(id: string, currentCourt: number, currentType: string, bluePen: string, whitePen: string) {
+    const newCourt = prompt("코트 번호를 입력하세요:", currentCourt.toString());
+    if (newCourt === null) return;
+    const newType = prompt("경기 종류 (MD: 남복, WD: 여복, XD: 혼복):", currentType);
+    if (newType === null) return;
+    const newBluePen = prompt("청팀 패널티:", bluePen || "0");
+    if (newBluePen === null) return;
+    const newWhitePen = prompt("백팀 패널티:", whitePen || "0");
+    if (newWhitePen === null) return;
+
+    const match_type = `${newType.toUpperCase()}:${newBluePen}:${newWhitePen}`;
+    
+    setMatches(matches.map(m => m.id === id ? { ...m, court_num: parseInt(newCourt) || currentCourt, match_type } : m));
+    await supabase.from('matches').update({ court_num: parseInt(newCourt) || currentCourt, match_type }).eq('id', id);
   }
 
   async function addMatch() {
@@ -39,7 +69,7 @@ export default function AdminPage() {
     await supabase.from('matches').insert({
       round_num: round,
       court_num: court,
-      match_type: 'MD',
+      match_type: 'MD:0:0',
       blue_player1: '선수1',
       blue_player2: '선수2',
       white_player1: '선수3',
@@ -64,10 +94,10 @@ export default function AdminPage() {
             onChange={e => setPwd(e.target.value)} 
             className="w-full border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl mb-4 text-center font-bold tracking-widest outline-none focus:ring-2 focus:ring-yellow-500 text-black dark:text-white"
             placeholder="비밀번호 입력"
-            onKeyDown={e => { if(e.key === 'Enter' && pwd === 'techzone123') setAuthed(true); }}
+            onKeyDown={e => { if(e.key === 'Enter' && pwd === '0070') setAuthed(true); }}
           />
           <button 
-            onClick={() => { if(pwd === 'techzone123') setAuthed(true); else alert('비밀번호가 틀렸습니다!'); }}
+            onClick={() => { if(pwd === '0070') setAuthed(true); else alert('비밀번호가 틀렸습니다!'); }}
             className="w-full bg-black dark:bg-yellow-600 text-white font-bold px-6 py-4 rounded-xl hover:opacity-80 transition"
           >
             입장하기
@@ -110,7 +140,12 @@ export default function AdminPage() {
                   <div key={m.id} className={`bg-white dark:bg-gray-900 rounded-2xl shadow-sm border overflow-hidden ${m.status === 'completed' ? 'border-gray-200 opacity-60' : 'border-blue-100 dark:border-blue-900/30'}`}>
                     {/* 코트 번호 헤더 */}
                     <div className="bg-gray-100 dark:bg-gray-800 px-4 py-2 flex justify-between items-center">
-                      <span className="font-black text-gray-700 dark:text-gray-300">코트 {m.court_num} ({actualType === 'MD' ? '남복' : actualType === 'WD' ? '여복' : '혼복'})</span>
+                      <span 
+                        className="font-black text-gray-700 dark:text-gray-300 cursor-pointer hover:underline"
+                        onClick={() => editMatchInfo(m.id, m.court_num, actualType, bluePen, whitePen)}
+                      >
+                        코트 {m.court_num} ({actualType === 'MD' ? '남복' : actualType === 'WD' ? '여복' : actualType === 'XD' ? '혼복' : actualType})
+                      </span>
                       <button 
                         onClick={async () => {
                           const newStatus = m.status === 'completed' ? 'pending' : 'completed';
@@ -127,20 +162,20 @@ export default function AdminPage() {
                       {/* 청팀 컨트롤 */}
                       <div className="flex-1 bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-800/50 flex flex-col items-center">
                         <div className="text-blue-600 dark:text-blue-400 font-black mb-2 text-lg flex items-center gap-2">
-                          청팀 <span className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-100 text-xs px-2 py-1 rounded-full">패널티 {bluePen}</span>
+                          청팀 {bluePen && bluePen !== '0' && <span className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-100 text-xs px-2 py-1 rounded-full">패널티 {bluePen}</span>}
                         </div>
-                        <div className="text-gray-700 dark:text-gray-300 font-medium mb-4 text-center h-12">
+                        <div 
+                          className="text-gray-700 dark:text-gray-300 font-medium mb-4 text-center h-12 cursor-pointer hover:underline"
+                          onClick={() => editPlayers(m.id, 'blue', m.blue_player1, m.blue_player2)}
+                        >
                           {m.blue_player1}<br/>{m.blue_player2}
                         </div>
-                        <div className="flex items-center gap-3 w-full justify-center">
-                          <button onClick={() => updateScore(m.id, 'blue', -1)} className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xl hover:bg-gray-100 shadow-sm text-black dark:text-white">
-                            <Minus className="w-5 h-5" />
-                          </button>
-                          <div className="text-5xl font-black w-20 text-center text-blue-600 dark:text-blue-400">
-                            {m.blue_score}
-                          </div>
-                          <button onClick={() => updateScore(m.id, 'blue', 1)} className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl hover:bg-blue-700 shadow-md">
-                            <Plus className="w-5 h-5" />
+                        <div className="flex items-center w-full justify-center mt-2">
+                          <button 
+                            onClick={() => setWinner(m.id, 'blue')} 
+                            className={`w-full py-3 rounded-xl font-black text-lg ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-blue-600 border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20'}`}
+                          >
+                            {m.status === 'completed' && m.blue_score > m.white_score ? '승리' : '승리 처리'}
                           </button>
                         </div>
                       </div>
@@ -153,20 +188,20 @@ export default function AdminPage() {
                       {/* 백팀 컨트롤 */}
                       <div className="flex-1 bg-gray-50 dark:bg-gray-800/30 rounded-xl p-4 border border-gray-200 dark:border-gray-800 flex flex-col items-center">
                         <div className="text-gray-700 dark:text-gray-300 font-black mb-2 text-lg flex items-center gap-2">
-                          백팀 <span className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded-full">패널티 {whitePen}</span>
+                          백팀 {whitePen && whitePen !== '0' && <span className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded-full">패널티 {whitePen}</span>}
                         </div>
-                        <div className="text-gray-700 dark:text-gray-300 font-medium mb-4 text-center h-12">
+                        <div 
+                          className="text-gray-700 dark:text-gray-300 font-medium mb-4 text-center h-12 cursor-pointer hover:underline"
+                          onClick={() => editPlayers(m.id, 'white', m.white_player1, m.white_player2)}
+                        >
                           {m.white_player1}<br/>{m.white_player2}
                         </div>
-                        <div className="flex items-center gap-3 w-full justify-center">
-                          <button onClick={() => updateScore(m.id, 'white', -1)} className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xl hover:bg-gray-100 shadow-sm text-black dark:text-white">
-                            <Minus className="w-5 h-5" />
-                          </button>
-                          <div className="text-5xl font-black w-20 text-center text-gray-800 dark:text-gray-200">
-                            {m.white_score}
-                          </div>
-                          <button onClick={() => updateScore(m.id, 'white', 1)} className="w-12 h-12 bg-gray-800 dark:bg-gray-100 text-white dark:text-black rounded-full flex items-center justify-center text-xl hover:opacity-80 shadow-md">
-                            <Plus className="w-5 h-5" />
+                        <div className="flex items-center w-full justify-center mt-2">
+                          <button 
+                            onClick={() => setWinner(m.id, 'white')} 
+                            className={`w-full py-3 rounded-xl font-black text-lg ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-black shadow-md' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                          >
+                            {m.status === 'completed' && m.white_score > m.blue_score ? '승리' : '승리 처리'}
                           </button>
                         </div>
                       </div>
