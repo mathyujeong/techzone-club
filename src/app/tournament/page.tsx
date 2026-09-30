@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 export default function TournamentPage() {
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
 
   async function fetchMatches() {
     const { data, error } = await supabase
@@ -101,24 +102,38 @@ export default function TournamentPage() {
             <div className="flex-1">
               <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-3 text-center">청팀</h3>
               <ul className="space-y-2">
-                {blueTeamStats.map(([name, count]) => (
-                  <li key={name} className="flex justify-between items-center text-sm">
-                    <span className="text-gray-700 dark:text-gray-300 truncate font-medium">{name}</span>
-                    <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded font-bold text-xs">{count}게임</span>
-                  </li>
-                ))}
+                {blueTeamStats.map(([name, count]) => {
+                  const isSelected = selectedPlayer === name;
+                  return (
+                    <li 
+                      key={name} 
+                      onClick={() => setSelectedPlayer(isSelected ? null : name)}
+                      className={`flex justify-between items-center text-sm cursor-pointer p-2 -mx-2 rounded-lg transition-all ${isSelected ? 'bg-blue-100 dark:bg-blue-900/40 ring-1 ring-blue-300 dark:ring-blue-800' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}
+                    >
+                      <span className={`truncate ${isSelected ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-gray-700 dark:text-gray-300 font-medium'}`}>{name}</span>
+                      <span className={`${isSelected ? 'bg-blue-200 dark:bg-blue-800/50 text-blue-800 dark:text-blue-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'} px-2 py-0.5 rounded font-bold text-xs transition-colors`}>{count}게임</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
             <div className="w-px bg-gray-200 dark:bg-gray-800"></div>
             <div className="flex-1">
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 text-center">백팀</h3>
               <ul className="space-y-2">
-                {whiteTeamStats.map(([name, count]) => (
-                  <li key={name} className="flex justify-between items-center text-sm">
-                    <span className="text-gray-700 dark:text-gray-300 truncate font-medium">{name}</span>
-                    <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded font-bold text-xs">{count}게임</span>
-                  </li>
-                ))}
+                {whiteTeamStats.map(([name, count]) => {
+                  const isSelected = selectedPlayer === name;
+                  return (
+                    <li 
+                      key={name} 
+                      onClick={() => setSelectedPlayer(isSelected ? null : name)}
+                      className={`flex justify-between items-center text-sm cursor-pointer p-2 -mx-2 rounded-lg transition-all ${isSelected ? 'bg-gray-200 dark:bg-gray-700/50 ring-1 ring-gray-300 dark:ring-gray-600' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}
+                    >
+                      <span className={`truncate ${isSelected ? 'text-gray-900 dark:text-gray-100 font-bold' : 'text-gray-700 dark:text-gray-300 font-medium'}`}>{name}</span>
+                      <span className={`${isSelected ? 'bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'} px-2 py-0.5 rounded font-bold text-xs transition-colors`}>{count}게임</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>
@@ -158,8 +173,15 @@ export default function TournamentPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {round.matches.map((match: any, idx: number) => {
                   const [actualType, bluePen, whitePen] = (match.match_type || '').split(':');
+                  const hasSelectedPlayer = selectedPlayer && [match.blue_player1, match.blue_player2, match.white_player1, match.white_player2].includes(selectedPlayer);
+                  const isDimmed = selectedPlayer && !hasSelectedPlayer;
+                  
                   return (
-                  <div key={idx} className={`rounded-2xl p-5 border shadow-sm transition-all ${match.status === 'completed' ? 'bg-white border-gray-200 dark:bg-gray-900 dark:border-gray-800' : 'bg-gray-50 border-gray-200 dark:bg-gray-950 dark:border-gray-800 hover:shadow-md'}`}>
+                  <div key={idx} className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
+                    isDimmed ? 'opacity-30 grayscale-[50%] scale-95 border-transparent bg-gray-50 dark:bg-gray-950' : 
+                    hasSelectedPlayer ? 'ring-4 ring-yellow-400 dark:ring-yellow-500 shadow-xl scale-[1.02] bg-white dark:bg-gray-900 border-yellow-400 dark:border-yellow-500 z-10 relative' : 
+                    (match.status === 'completed' ? 'bg-white border-gray-200 dark:bg-gray-900 dark:border-gray-800' : 'bg-gray-50 border-gray-200 dark:bg-gray-950 dark:border-gray-800 hover:shadow-md')
+                  }`}>
                     <div className="flex justify-between items-center mb-5">
                       <span className="bg-yellow-400 text-yellow-950 text-xs font-black px-3 py-1.5 rounded-lg dark:bg-yellow-500 dark:text-yellow-950 shadow-sm">
                         {match.court_num}코트
