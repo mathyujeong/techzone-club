@@ -427,8 +427,9 @@ export default function AdminPage() {
                         <button 
                           onClick={async () => {
                             const newStatus = m.status === 'completed' ? 'pending' : 'completed';
+                            // 즉시 UI 업데이트 (빠른 반응)
+                            setMatches(matches.map(match => match.id === m.id ? { ...match, status: newStatus } : match));
                             await supabase.from('matches').update({ status: newStatus }).eq('id', m.id);
-                            fetchMatches();
                           }}
                           className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm transition-all ${
                             m.status === 'completed' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
