@@ -423,19 +423,21 @@ export default function AdminPage() {
                       >
                         {m.court_num}코트 <span className="text-gray-500">({tName})</span>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex items-center gap-3">
                         <button 
                           onClick={async () => {
                             const newStatus = m.status === 'completed' ? 'pending' : 'completed';
                             await supabase.from('matches').update({ status: newStatus }).eq('id', m.id);
                             fetchMatches();
                           }}
-                          className="text-[9px] font-bold text-gray-500 px-1"
+                          className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm transition-all ${
+                            m.status === 'completed' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                          }`}
                         >
-                          {m.status === 'completed' ? '재개' : '종료'}
+                          {m.status === 'completed' ? '↺ 재개' : '종료'}
                         </button>
-                        <button onClick={() => deleteMatch(m.id)} className="text-gray-400 p-0.5" title="경기 삭제">
-                          <Trash2 className="w-3 h-3" />
+                        <button onClick={() => deleteMatch(m.id)} className="text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ml-1" title="경기 삭제">
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
