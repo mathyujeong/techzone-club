@@ -63,9 +63,41 @@ export default function AdminPage() {
       return;
     }
 
-    const updateData = team === 'blue' 
+    const updateData: any = team === 'blue' 
       ? { blue_player1: finalP1, blue_player2: finalP2 } 
       : { white_player1: finalP1, white_player2: finalP2 };
+
+    const m = matches.find(m => m.id === id);
+    if (m) {
+      const b1 = team === 'blue' ? finalP1 : m.blue_player1;
+      const b2 = team === 'blue' ? finalP2 : m.blue_player2;
+      const w1 = team === 'white' ? finalP1 : m.white_player1;
+      const w2 = team === 'white' ? finalP2 : m.white_player2;
+      
+      const PLAYER_PENALTY: Record<string, number> = {
+        '김태섭(A)': 4, '유반석(B)': 3, '전영배(E)': 0, '주원희(E)': 0, '강봉선(S)': 8, '백숙호(D)': 1,
+        '양하나(A)': 4, '유소라(A)': 4, '현정혜(B)': 3, '이청아(C)': 2, '정규임(D)': 1, '배진희(E)': 0, '정진선(S)': 5,
+        '김창수(A)': 4, '최진용(A)': 4, '이정훈(B)': 3, '송온유(D)': 1, '정광종(A)': 4, '장상원(E)': 0,
+        '김세라(A)': 4, '김기원(B)': 3, '조유정(D)': 1, '강민정(E)': 0, '박지윤(S)': 5, '신나리(S)': 5
+      };
+
+      const bp1Pen = PLAYER_PENALTY[b1];
+      const bp2Pen = PLAYER_PENALTY[b2];
+      const wp1Pen = PLAYER_PENALTY[w1];
+      const wp2Pen = PLAYER_PENALTY[w2];
+
+      if (bp1Pen !== undefined && bp2Pen !== undefined && wp1Pen !== undefined && wp2Pen !== undefined) {
+        const bPenTotal = bp1Pen + bp2Pen;
+        const wPenTotal = wp1Pen + wp2Pen;
+        let finalBluePen = 0;
+        let finalWhitePen = 0;
+        if (bPenTotal > wPenTotal) finalBluePen = bPenTotal - wPenTotal;
+        else if (wPenTotal > bPenTotal) finalWhitePen = wPenTotal - bPenTotal;
+
+        const [actualType] = (m.match_type || 'MD:0:0').split(':');
+        updateData.match_type = `${actualType}:${finalBluePen}:${finalWhitePen}`;
+      }
+    }
       
     setMatches(matches.map(m => m.id === id ? { ...m, ...updateData } : m));
     await supabase.from('matches').update(updateData).eq('id', id);
