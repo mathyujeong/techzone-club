@@ -334,41 +334,45 @@ export default function AdminPage() {
                     
                     <div className="flex flex-col flex-1 divide-y divide-gray-100 dark:divide-gray-800">
                       {/* 청팀 */}
-                      <div className={`p-1.5 flex flex-col flex-1 items-center justify-between ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
-                        <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-0.5">
-                          청 {bluePen && bluePen !== '0' && <span className="text-[9px] opacity-70">(-{bluePen})</span>}
+                      <div className={`p-1.5 flex flex-col flex-1 justify-center gap-1 ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
+                        <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 text-center mb-0.5">
+                          청팀 {bluePen && bluePen !== '0' && <span className="text-[9px] opacity-70">(-{bluePen})</span>}
                         </div>
-                        <div 
-                          className="text-center font-medium cursor-pointer hover:underline leading-tight mb-1 truncate w-full"
-                          onClick={() => editPlayers(m.id, 'blue', m.blue_player1, m.blue_player2)}
-                        >
-                          {m.blue_player1}<br/>{m.blue_player2}
+                        <div className="flex flex-row items-center justify-between gap-1 w-full">
+                          <div 
+                            className="font-medium cursor-pointer hover:underline leading-tight text-left flex-1 break-keep"
+                            onClick={() => editPlayers(m.id, 'blue', m.blue_player1, m.blue_player2)}
+                          >
+                            {m.blue_player1}<br/>{m.blue_player2}
+                          </div>
+                          <button 
+                            onClick={() => setWinner(m.id, 'blue')} 
+                            className={`shrink-0 px-2 py-1.5 rounded text-[10px] font-black ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'}`}
+                          >
+                            {m.status === 'completed' && m.blue_score > m.white_score ? '승리' : '승'}
+                          </button>
                         </div>
-                        <button 
-                          onClick={() => setWinner(m.id, 'blue')} 
-                          className={`w-full py-1 rounded text-[10px] font-bold ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'}`}
-                        >
-                          {m.status === 'completed' && m.blue_score > m.white_score ? '승리' : '승'}
-                        </button>
                       </div>
 
                       {/* 백팀 */}
-                      <div className={`p-1.5 flex flex-col flex-1 items-center justify-between ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
-                        <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300 mb-0.5">
-                          백 {whitePen && whitePen !== '0' && <span className="text-[9px] opacity-70">(-{whitePen})</span>}
+                      <div className={`p-1.5 flex flex-col flex-1 justify-center gap-1 ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                        <div className="text-[10px] font-bold text-gray-700 dark:text-gray-300 text-center mb-0.5">
+                          백팀 {whitePen && whitePen !== '0' && <span className="text-[9px] opacity-70">(-{whitePen})</span>}
                         </div>
-                        <div 
-                          className="text-center font-medium cursor-pointer hover:underline leading-tight mb-1 text-gray-800 dark:text-gray-200 truncate w-full"
-                          onClick={() => editPlayers(m.id, 'white', m.white_player1, m.white_player2)}
-                        >
-                          {m.white_player1}<br/>{m.white_player2}
+                        <div className="flex flex-row items-center justify-between gap-1 w-full">
+                          <div 
+                            className="font-medium cursor-pointer hover:underline leading-tight text-left text-gray-800 dark:text-gray-200 flex-1 break-keep"
+                            onClick={() => editPlayers(m.id, 'white', m.white_player1, m.white_player2)}
+                          >
+                            {m.white_player1}<br/>{m.white_player2}
+                          </div>
+                          <button 
+                            onClick={() => setWinner(m.id, 'white')} 
+                            className={`shrink-0 px-2 py-1.5 rounded text-[10px] font-black ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-black shadow-sm' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
+                          >
+                            {m.status === 'completed' && m.white_score > m.blue_score ? '승리' : '승'}
+                          </button>
                         </div>
-                        <button 
-                          onClick={() => setWinner(m.id, 'white')} 
-                          className={`w-full py-1 rounded text-[10px] font-bold ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-black' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
-                        >
-                          {m.status === 'completed' && m.white_score > m.blue_score ? '승리' : '승'}
-                        </button>
                       </div>
                     </div>
                   </div>
