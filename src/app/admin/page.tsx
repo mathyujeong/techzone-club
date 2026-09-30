@@ -416,35 +416,20 @@ export default function AdminPage() {
                   return (
                   <div key={m.id} className={`flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-sm border overflow-hidden ${m.status === 'completed' ? 'border-gray-200 opacity-70' : 'border-blue-200 dark:border-blue-900/50'}`}>
                     {/* 코트 번호 헤더 */}
-                    <div className="bg-gray-100 dark:bg-gray-800 p-1 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                    <div className="bg-gray-100 dark:bg-gray-800 p-2 flex justify-between items-center border-b border-gray-200 dark:border-gray-700 whitespace-nowrap">
                       <div 
-                        className="font-bold text-gray-800 dark:text-gray-200 text-[10px] cursor-pointer"
+                        className="font-bold text-gray-800 dark:text-gray-200 text-[11px] cursor-pointer"
                         onClick={() => openEditMatch(m.id, m.round_num, m.court_num, actualType, bluePen, whitePen)}
                       >
-                        {m.court_num}코트 <span className="text-gray-500">({tName})</span>
+                        {m.court_num}코트 <span className="text-gray-500 font-normal">({tName})</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <button 
-                          onClick={async () => {
-                            const newStatus = m.status === 'completed' ? 'pending' : 'completed';
-                            // 즉시 UI 업데이트 (빠른 반응)
-                            setMatches(matches.map(match => match.id === m.id ? { ...match, status: newStatus } : match));
-                            await supabase.from('matches').update({ status: newStatus }).eq('id', m.id);
-                          }}
-                          className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm transition-all ${
-                            m.status === 'completed' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          {m.status === 'completed' ? '↺ 재개' : '종료'}
-                        </button>
-                        <button onClick={() => deleteMatch(m.id)} className="text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ml-1" title="경기 삭제">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      <button onClick={() => deleteMatch(m.id)} className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ml-1 shrink-0" title="경기 삭제">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                     
                     {/* 청팀 */}
-                    <div className={`p-1.5 flex justify-between items-center border-b border-gray-100 dark:border-gray-800 ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
+                    <div className={`p-1.5 flex justify-between items-center border-b border-gray-100 dark:border-gray-800 flex-1 ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
                       <div 
                         className="font-bold text-[12px] text-blue-700 dark:text-blue-400 cursor-pointer w-full"
                         onClick={() => editPlayers(m.id, 'blue', m.blue_player1, m.blue_player2)}
@@ -455,7 +440,7 @@ export default function AdminPage() {
                       </div>
                       <button 
                         onClick={() => setWinner(m.id, 'blue')} 
-                        className={`w-7 h-7 rounded-full border shrink-0 ${
+                        className={`w-7 h-7 rounded-full border shrink-0 ml-1 ${
                           m.status === 'completed' && m.blue_score > m.white_score 
                             ? 'bg-blue-600 border-blue-600 text-white' 
                             : 'bg-white border-blue-200 text-blue-500 dark:bg-gray-800'
@@ -466,7 +451,7 @@ export default function AdminPage() {
                     </div>
 
                     {/* 백팀 */}
-                    <div className={`p-1.5 flex justify-between items-center ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                    <div className={`p-1.5 flex justify-between items-center flex-1 ${m.status === 'completed' && m.white_score > m.blue_score ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
                       <div 
                         className="font-bold text-[12px] text-gray-800 dark:text-gray-200 cursor-pointer w-full"
                         onClick={() => editPlayers(m.id, 'white', m.white_player1, m.white_player2)}
@@ -477,7 +462,7 @@ export default function AdminPage() {
                       </div>
                       <button 
                         onClick={() => setWinner(m.id, 'white')} 
-                        className={`w-7 h-7 rounded-full border shrink-0 ${
+                        className={`w-7 h-7 rounded-full border shrink-0 ml-1 ${
                           m.status === 'completed' && m.white_score > m.blue_score 
                             ? 'bg-gray-800 border-gray-800 text-white dark:bg-gray-200 dark:text-black' 
                             : 'bg-white border-gray-200 text-gray-500 dark:bg-gray-800'
@@ -486,6 +471,22 @@ export default function AdminPage() {
                         <span className="text-[9px] font-black">{m.status === 'completed' && m.white_score > m.white_score ? 'WIN' : '승'}</span>
                       </button>
                     </div>
+
+                    {/* 하단 제어 영역 (재개/종료) */}
+                    <button 
+                      onClick={async () => {
+                        const newStatus = m.status === 'completed' ? 'pending' : 'completed';
+                        setMatches(matches.map(match => match.id === m.id ? { ...match, status: newStatus } : match));
+                        await supabase.from('matches').update({ status: newStatus }).eq('id', m.id);
+                      }}
+                      className={`w-full text-center py-2 text-[10px] font-bold transition-all border-t border-gray-200 dark:border-gray-700 ${
+                        m.status === 'completed' 
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 hover:bg-amber-200' 
+                          : 'bg-gray-100 text-gray-600 dark:bg-gray-800/80 dark:text-gray-400 hover:bg-gray-200'
+                      }`}
+                    >
+                      {m.status === 'completed' ? '↺ 경기 재개' : '■ 경기 종료'}
+                    </button>
                   </div>
                 )})}
               </div>
