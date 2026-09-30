@@ -100,7 +100,9 @@ export default function TournamentPage() {
           </h2>
           <div className="flex gap-4">
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-3 text-center">청팀</h3>
+              <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-3 text-center flex items-center justify-center gap-1">
+                청팀 <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full">{blueTeamStats.length}명</span>
+              </h3>
               <ul className="space-y-2">
                 {blueTeamStats.map(([name, count]) => {
                   const isSelected = selectedPlayer === name;
@@ -119,7 +121,9 @@ export default function TournamentPage() {
             </div>
             <div className="w-px bg-gray-200 dark:bg-gray-800"></div>
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 text-center">백팀</h3>
+              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 text-center flex items-center justify-center gap-1">
+                백팀 <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full">{whiteTeamStats.length}명</span>
+              </h3>
               <ul className="space-y-2">
                 {whiteTeamStats.map(([name, count]) => {
                   const isSelected = selectedPlayer === name;

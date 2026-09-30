@@ -408,7 +408,9 @@ export default function AdminPage() {
           </h2>
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-3">청팀</h3>
+              <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-1">
+                청팀 <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full">{blueTeamStats.length}명</span>
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {blueTeamStats.map(([name, count]) => (
                   <span key={name} className="bg-blue-50 border border-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300">
@@ -419,7 +421,9 @@ export default function AdminPage() {
             </div>
             <div className="hidden md:block w-px bg-gray-200 dark:bg-gray-800"></div>
             <div className="flex-1">
-              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">백팀</h3>
+              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1">
+                백팀 <span className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full">{whiteTeamStats.length}명</span>
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {whiteTeamStats.map(([name, count]) => (
                   <span key={name} className="bg-gray-100 border border-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
