@@ -1,0 +1,302 @@
+[
+  {
+    "round": 1,
+    "court": 1,
+    "type": "MD",
+    "blue_team": [
+      "김태섭",
+      "유반석"
+    ],
+    "white_team": [
+      "최진용",
+      "이정훈"
+    ],
+    "blue_score": -7,
+    "white_score": -7
+  },
+  {
+    "round": 1,
+    "court": 2,
+    "type": "WD",
+    "blue_team": [
+      "정진선",
+      "현정혜"
+    ],
+    "white_team": [
+      "박지윤",
+      "조유정"
+    ],
+    "blue_score": -8,
+    "white_score": -6
+  },
+  {
+    "round": 1,
+    "court": 3,
+    "type": "MD",
+    "blue_team": [
+      "전영배",
+      "주원희"
+    ],
+    "white_team": [
+      "백숙호",
+      "장상원"
+    ],
+    "blue_score": 0,
+    "white_score": -1
+  },
+  {
+    "round": 2,
+    "court": 1,
+    "type": "MD",
+    "blue_team": [
+      "유반석",
+      "전영배"
+    ],
+    "white_team": [
+      "송온유",
+      "장상원"
+    ],
+    "blue_score": -3,
+    "white_score": -1
+  },
+  {
+    "round": 2,
+    "court": 2,
+    "type": "WD",
+    "blue_team": [
+      "현정혜",
+      "김기원"
+    ],
+    "white_team": [
+      "이청아",
+      "조유정"
+    ],
+    "blue_score": -6,
+    "white_score": -3
+  },
+  {
+    "round": 2,
+    "court": 3,
+    "type": "WD",
+    "blue_team": [
+      "정진선",
+      "양하나"
+    ],
+    "white_team": [
+      "김세라",
+      "박지윤"
+    ],
+    "blue_score": -9,
+    "white_score": -9
+  },
+  {
+    "round": 3,
+    "court": 1,
+    "type": "MD",
+    "blue_team": [
+      "주원희",
+      "김태섭"
+    ],
+    "white_team": [
+      "이정훈",
+      "송온유"
+    ],
+    "blue_score": -4,
+    "white_score": -4
+  },
+  {
+    "round": 3,
+    "court": 2,
+    "type": "XD",
+    "blue_team": [
+      "전영배",
+      "강민정"
+    ],
+    "white_team": [
+      "김창수",
+      "정규임"
+    ],
+    "blue_score": 0,
+    "white_score": -5
+  },
+  {
+    "round": 3,
+    "court": 3,
+    "type": "WD",
+    "blue_team": [
+      "유소라",
+      "양하나"
+    ],
+    "white_team": [
+      "박지윤",
+      "김세라"
+    ],
+    "blue_score": -8,
+    "white_score": -9
+  },
+  {
+    "round": 4,
+    "court": 1,
+    "type": "WD",
+    "blue_team": [
+      "정진선",
+      "유소라"
+    ],
+    "white_team": [
+      "김세라",
+      "신나리"
+    ],
+    "blue_score": -9,
+    "white_score": -9
+  },
+  {
+    "round": 4,
+    "court": 2,
+    "type": "WD",
+    "blue_team": [
+      "배진희",
+      "양하나"
+    ],
+    "white_team": [
+      "정규임",
+      "이청아"
+    ],
+    "blue_score": -4,
+    "white_score": -3
+  },
+  {
+    "round": 4,
+    "court": 3,
+    "type": "MD",
+    "blue_team": [
+      "유반석",
+      "김태섭"
+    ],
+    "white_team": [
+      "김창수",
+      "백숙호"
+    ],
+    "blue_score": -7,
+    "white_score": -5
+  },
+  {
+    "round": 5,
+    "court": 1,
+    "type": "WD",
+    "blue_team": [
+      "강민정",
+      "김기원"
+    ],
+    "white_team": [
+      "김세라",
+      "박지윤"
+    ],
+    "blue_score": -3,
+    "white_score": -9
+  },
+  {
+    "round": 5,
+    "court": 2,
+    "type": "WD",
+    "blue_team": [
+      "현정혜",
+      "배진희"
+    ],
+    "white_team": [
+      "이청아",
+      "신나리"
+    ],
+    "blue_score": -3,
+    "white_score": -7
+  },
+  {
+    "round": 5,
+    "court": 3,
+    "type": "MD",
+    "blue_team": [
+      "강봉선",
+      "주원희"
+    ],
+    "white_team": [
+      "최진용",
+      "장상원"
+    ],
+    "blue_score": -5,
+    "white_score": -4
+  },
+  {
+    "round": 6,
+    "court": 1,
+    "type": "XD",
+    "blue_team": [
+      "강봉선",
+      "유소라"
+    ],
+    "white_team": [
+      "이정훈",
+      "신나리"
+    ],
+    "blue_score": -9,
+    "white_score": -8
+  },
+  {
+    "round": 6,
+    "court": 2,
+    "type": "WD",
+    "blue_team": [
+      "강민정",
+      "배진희"
+    ],
+    "white_team": [
+      "정규임",
+      "이청아"
+    ],
+    "blue_score": 0,
+    "white_score": -3
+  },
+  {
+    "round": 6,
+    "court": 3,
+    "type": "MD",
+    "blue_team": [
+      "전영배",
+      "김태섭"
+    ],
+    "white_team": [
+      "백숙호",
+      "김창수"
+    ],
+    "blue_score": -4,
+    "white_score": -5
+  },
+  {
+    "round": 7,
+    "court": 1,
+    "type": "XD",
+    "blue_team": [
+      "강봉선",
+      "김기원"
+    ],
+    "white_team": [
+      "최진용",
+      "신나리"
+    ],
+    "blue_score": -8,
+    "white_score": -9
+  },
+  {
+    "round": 7,
+    "court": 2,
+    "type": "XD",
+    "blue_team": [
+      "주원희",
+      "배진희"
+    ],
+    "white_team": [
+      "송온유",
+      "조유정"
+    ],
+    "blue_score": 0,
+    "white_score": -2
+  }
+]
