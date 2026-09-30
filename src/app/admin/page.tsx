@@ -440,13 +440,13 @@ export default function AdminPage() {
                       </div>
                       <button 
                         onClick={() => setWinner(m.id, 'blue')} 
-                        className={`w-7 h-7 rounded-full border shrink-0 ml-1 ${
+                        className={`w-7 h-7 flex justify-center items-center rounded-full border shrink-0 ml-1 shadow-sm ${
                           m.status === 'completed' && m.blue_score > m.white_score 
                             ? 'bg-blue-600 border-blue-600 text-white' 
                             : 'bg-white border-blue-200 text-blue-500 dark:bg-gray-800'
                         }`}
                       >
-                        <span className="text-[9px] font-black">{m.status === 'completed' && m.blue_score > m.white_score ? 'WIN' : '승'}</span>
+                        <span className="text-[10px] font-black leading-none">{m.status === 'completed' && m.blue_score > m.white_score ? 'WIN' : '승'}</span>
                       </button>
                     </div>
 
@@ -462,13 +462,13 @@ export default function AdminPage() {
                       </div>
                       <button 
                         onClick={() => setWinner(m.id, 'white')} 
-                        className={`w-7 h-7 rounded-full border shrink-0 ml-1 ${
+                        className={`w-7 h-7 flex justify-center items-center rounded-full border shrink-0 ml-1 shadow-sm ${
                           m.status === 'completed' && m.white_score > m.blue_score 
                             ? 'bg-gray-800 border-gray-800 text-white dark:bg-gray-200 dark:text-black' 
                             : 'bg-white border-gray-200 text-gray-500 dark:bg-gray-800'
                         }`}
                       >
-                        <span className="text-[9px] font-black">{m.status === 'completed' && m.white_score > m.white_score ? 'WIN' : '승'}</span>
+                        <span className="text-[10px] font-black leading-none">{m.status === 'completed' && m.white_score > m.blue_score ? 'WIN' : '승'}</span>
                       </button>
                     </div>
 
