@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Settings, Plus, Minus, Check, Play, Pause, RefreshCw, Trophy, Users } from "lucide-react";
+import { Settings, Plus, Minus, Check, Play, Pause, RefreshCw, Trophy, Users, Trash2 } from "lucide-react";
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
@@ -81,6 +81,13 @@ export default function AdminPage() {
     fetchMatches();
   }
 
+  async function deleteMatch(id: string) {
+    if (confirm("정말로 이 경기를 삭제하시겠습니까?")) {
+      setMatches(matches.filter(m => m.id !== id));
+      await supabase.from('matches').delete().eq('id', id);
+    }
+  }
+
   if (!authed) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
@@ -146,16 +153,21 @@ export default function AdminPage() {
                       >
                         코트 {m.court_num} ({actualType === 'MD' ? '남복' : actualType === 'WD' ? '여복' : actualType === 'XD' ? '혼복' : actualType})
                       </span>
-                      <button 
-                        onClick={async () => {
-                          const newStatus = m.status === 'completed' ? 'pending' : 'completed';
-                          await supabase.from('matches').update({ status: newStatus }).eq('id', m.id);
-                          fetchMatches();
-                        }}
-                        className={`px-3 py-1 rounded-md text-xs font-bold ${m.status === 'completed' ? 'bg-gray-300 text-gray-700' : 'bg-red-500 text-white'}`}
-                      >
-                        {m.status === 'completed' ? '경기 재개' : '경기 종료'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={async () => {
+                            const newStatus = m.status === 'completed' ? 'pending' : 'completed';
+                            await supabase.from('matches').update({ status: newStatus }).eq('id', m.id);
+                            fetchMatches();
+                          }}
+                          className={`px-3 py-1 rounded-md text-xs font-bold ${m.status === 'completed' ? 'bg-gray-300 text-gray-700' : 'bg-red-500 text-white'}`}
+                        >
+                          {m.status === 'completed' ? '경기 재개' : '경기 종료'}
+                        </button>
+                        <button onClick={() => deleteMatch(m.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1" title="경기 삭제">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="p-4 flex flex-col md:flex-row gap-4">
