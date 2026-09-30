@@ -310,10 +310,10 @@ export default function AdminPage() {
                     {/* 코트 번호 헤더 */}
                     <div className="bg-gray-100 dark:bg-gray-800 p-2 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
                       <div 
-                        className="font-black text-gray-800 dark:text-gray-200 text-[11px] sm:text-sm cursor-pointer hover:underline"
+                        className="font-black text-gray-800 dark:text-gray-200 text-[11px] sm:text-sm cursor-pointer hover:underline break-keep"
                         onClick={() => editMatchInfo(m.id, m.court_num, actualType, bluePen, whitePen)}
                       >
-                        C{m.court_num} <span className="font-medium text-gray-500 ml-0.5">({actualType})</span>
+                        {m.court_num}코트 <span className="font-medium text-gray-500 ml-0.5">({actualType === 'MD' ? '남복' : actualType === 'WD' ? '여복' : actualType === 'XD' ? '혼복' : actualType})</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <button 

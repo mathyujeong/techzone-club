@@ -142,10 +142,10 @@ export default function TournamentPage() {
                   <div key={idx} className={`rounded-2xl p-5 border shadow-sm transition-all ${match.status === 'completed' ? 'bg-white border-gray-200 dark:bg-gray-900 dark:border-gray-800' : 'bg-gray-50 border-gray-200 dark:bg-gray-950 dark:border-gray-800 hover:shadow-md'}`}>
                     <div className="flex justify-between items-center mb-5">
                       <span className="bg-yellow-400 text-yellow-950 text-xs font-black px-3 py-1.5 rounded-lg dark:bg-yellow-500 dark:text-yellow-950 shadow-sm">
-                        코트 {match.court_num}
+                        {match.court_num}코트
                       </span>
                       <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
-                        {actualType === 'MD' ? '남자 복식' : actualType === 'WD' ? '여자 복식' : '혼합 복식'}
+                        {actualType === 'MD' ? '남복' : actualType === 'WD' ? '여복' : actualType === 'XD' ? '혼복' : actualType}
                       </span>
                     </div>
                     
