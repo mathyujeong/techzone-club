@@ -8,6 +8,11 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pwd, setPwd] = useState("");
   const [matches, setMatches] = useState<any[]>([]);
+  const [editPlayerModal, setEditPlayerModal] = useState<{ id: string, team: 'blue' | 'white', currentP1: string, currentP2: string } | null>(null);
+  const [p1Select, setP1Select] = useState("");
+  const [p1Input, setP1Input] = useState("");
+  const [p2Select, setP2Select] = useState("");
+  const [p2Input, setP2Input] = useState("");
 
   useEffect(() => {
     if (authed) fetchMatches();
@@ -31,18 +36,39 @@ export default function AdminPage() {
     }).eq('id', id);
   }
 
-  async function editPlayers(id: string, team: 'blue' | 'white', p1: string, p2: string) {
-    const newP1 = prompt(`${team === 'blue' ? '청팀' : '백팀'} 첫 번째 선수 이름:`, p1);
-    if (newP1 === null) return;
-    const newP2 = prompt(`${team === 'blue' ? '청팀' : '백팀'} 두 번째 선수 이름:`, p2);
-    if (newP2 === null) return;
+  function editPlayers(id: string, team: 'blue' | 'white', p1: string, p2: string) {
+    setEditPlayerModal({ id, team, currentP1: p1, currentP2: p2 });
+    
+    const teamStats = team === 'blue' ? blueTeamStats : whiteTeamStats;
+    const isP1Exist = teamStats.some(([n]) => n === p1);
+    const isP2Exist = teamStats.some(([n]) => n === p2);
+    
+    setP1Select(isP1Exist ? p1 : '직접입력');
+    setP1Input(isP1Exist ? '' : p1);
+    
+    setP2Select(isP2Exist ? p2 : '직접입력');
+    setP2Input(isP2Exist ? '' : p2);
+  }
+
+  async function savePlayers() {
+    if (!editPlayerModal) return;
+    const { id, team } = editPlayerModal;
+    
+    const finalP1 = p1Select === '직접입력' ? p1Input.trim() : p1Select;
+    const finalP2 = p2Select === '직접입력' ? p2Input.trim() : p2Select;
+    
+    if(!finalP1 || !finalP2) {
+      alert("선수 이름을 모두 입력해주세요.");
+      return;
+    }
 
     const updateData = team === 'blue' 
-      ? { blue_player1: newP1, blue_player2: newP2 } 
-      : { white_player1: newP1, white_player2: newP2 };
+      ? { blue_player1: finalP1, blue_player2: finalP2 } 
+      : { white_player1: finalP1, white_player2: finalP2 };
       
     setMatches(matches.map(m => m.id === id ? { ...m, ...updateData } : m));
     await supabase.from('matches').update(updateData).eq('id', id);
+    setEditPlayerModal(null);
   }
 
   async function editMatchInfo(id: string, currentCourt: number, currentType: string, bluePen: string, whitePen: string) {
@@ -114,10 +140,107 @@ export default function AdminPage() {
     );
   }
 
+
+  const playerStats: Record<string, number> = {};
+  matches.forEach(m => {
+    [m.blue_player1, m.blue_player2, m.white_player1, m.white_player2].forEach(p => {
+      if(p) playerStats[p] = (playerStats[p] || 0) + 1;
+    });
+  });
+
+  const blueTeamStats = Object.entries(playerStats)
+    .filter(([name]) => matches.some(m => m.blue_player1 === name || m.blue_player2 === name))
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    
+  const whiteTeamStats = Object.entries(playerStats)
+    .filter(([name]) => matches.some(m => m.white_player1 === name || m.white_player2 === name))
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
   const roundNums = Array.from(new Set(matches.map(m => m.round_num))).sort((a, b) => a - b);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20">
+
+      {editPlayerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6 border border-gray-200 dark:border-gray-800">
+            <h2 className="text-xl font-bold mb-4">{editPlayerModal.team === 'blue' ? '청팀' : '백팀'} 선수 교체</h2>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">첫 번째 선수</label>
+                <select 
+                  value={p1Select} 
+                  onChange={e => {
+                    setP1Select(e.target.value);
+                    if(e.target.value !== '직접입력') setP1Input('');
+                  }} 
+                  className="w-full border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 outline-none mb-2 text-black dark:text-white"
+                >
+                  <option value="">-- 선택 --</option>
+                  {(editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(([name]) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                  <option value="직접입력">+ 새 선수/게스트 직접입력</option>
+                </select>
+                {p1Select === '직접입력' && (
+                  <input 
+                    type="text" 
+                    placeholder="선수 이름 입력"
+                    value={p1Input}
+                    onChange={e => setP1Input(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg p-2 outline-none text-black dark:text-white"
+                    autoFocus
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">두 번째 선수</label>
+                <select 
+                  value={p2Select} 
+                  onChange={e => {
+                    setP2Select(e.target.value);
+                    if(e.target.value !== '직접입력') setP2Input('');
+                  }} 
+                  className="w-full border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 outline-none mb-2 text-black dark:text-white"
+                >
+                  <option value="">-- 선택 --</option>
+                  {(editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(([name]) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                  <option value="직접입력">+ 새 선수/게스트 직접입력</option>
+                </select>
+                {p2Select === '직접입력' && (
+                  <input 
+                    type="text" 
+                    placeholder="선수 이름 입력"
+                    value={p2Input}
+                    onChange={e => setP2Input(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg p-2 outline-none text-black dark:text-white"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setEditPlayerModal(null)} 
+                className="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3 rounded-xl font-bold"
+              >
+                취소
+              </button>
+              <button 
+                onClick={savePlayers} 
+                className="flex-1 bg-yellow-500 text-white py-3 rounded-xl font-bold"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 상단 헤더 */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -128,6 +251,39 @@ export default function AdminPage() {
           <button onClick={addMatch} className="bg-gray-900 dark:bg-gray-100 text-white dark:text-black px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-1 hover:opacity-80">
             <Plus className="w-4 h-4" /> 경기 추가
           </button>
+        </div>
+      </div>
+
+
+      {/* 통계 패널 */}
+      <div className="container mx-auto px-4 pt-8">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+          <h2 className="text-lg font-bold mb-6 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-4">
+            <Users className="text-yellow-600 w-5 h-5" />팀 구성 및 선수별 배정 경기 수
+          </h2>
+          <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-3">청팀</h3>
+              <div className="flex flex-wrap gap-2">
+                {blueTeamStats.map(([name, count]) => (
+                  <span key={name} className="bg-blue-50 border border-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300">
+                    {name} <span className="font-bold opacity-70">({count})</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="hidden md:block w-px bg-gray-200 dark:bg-gray-800"></div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">백팀</h3>
+              <div className="flex flex-wrap gap-2">
+                {whiteTeamStats.map(([name, count]) => (
+                  <span key={name} className="bg-gray-100 border border-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
+                    {name} <span className="font-bold opacity-70">({count})</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
