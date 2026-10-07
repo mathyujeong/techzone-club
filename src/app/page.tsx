@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Trophy } from "lucide-react";
+import AddToHomeButton from "@/components/AddToHomeButton";
 
 export default function Home() {
   return (
@@ -41,6 +42,9 @@ export default function Home() {
           클럽 소개
         </Link>
       </div>
+
+      <AddToHomeButton />
     </div>
   );
 }
+
