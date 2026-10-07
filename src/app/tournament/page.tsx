@@ -173,6 +173,14 @@ export default function TournamentPage() {
             <div key={round.roundNum} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
               <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-4">
                 <Clock className="text-yellow-600 w-6 h-6" />{round.roundNum}라운드
+                <span className="text-sm font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full ml-2">
+                  {(() => {
+                    const totalMinutes = 580 + (round.roundNum - 1) * 20;
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    return `${hours}:${minutes.toString().padStart(2, '0')}`;
+                  })()}
+                </span>
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
