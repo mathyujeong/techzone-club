@@ -30,14 +30,7 @@ export default function AdminPage() {
 
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
 
-  // set selected tournament when tournaments load
-  useEffect(() => {
-    if (tournaments.length > 0 && !selectedTournamentId) {
-      // Find IN_PROGRESS first, otherwise first in list
-      const active = tournaments.find(t => t.status === 'IN_PROGRESS') || tournaments[0];
-      setSelectedTournamentId(active.id);
-    }
-  }, [tournaments]);
+
 
 
   async function fetchPlayersAndTournaments() {
@@ -321,7 +314,7 @@ export default function AdminPage() {
             관리자 메뉴
           </h1>
           <button onClick={() => { setGeneratedBracket([]); setIsGeneratorModalOpen(true); }} className="w-full bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 hover:bg-blue-700 shadow-sm transition-colors">
-            <RefreshCw className="w-4 h-4" /> 새 대회 생성
+            <RefreshCw className="w-4 h-4" /> 새 대회 추가
           </button>
         </div>
         
@@ -533,6 +526,15 @@ export default function AdminPage() {
         </div>
       )}
 
+
+        {!selectedTournamentId ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-600 bg-gray-50/50 dark:bg-gray-950/50 py-32">
+            <Trophy className="w-16 h-16 mb-4 opacity-20" />
+            <p className="font-bold text-lg text-gray-500">왼쪽 목록에서 대회를 선택해주세요.</p>
+            <p className="text-sm mt-2">새로운 월례회를 시작하려면 좌측의 [새 대회 추가]를 눌러주세요.</p>
+          </div>
+        ) : (
+          <>
       {/* 상단 헤더 */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -706,6 +708,9 @@ export default function AdminPage() {
         })}
       </div>
     
+          </>
+        )}
+
       {/* --- 대진표 자동 생성 모달 --- */}
       {isGeneratorModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
