@@ -1,6 +1,16 @@
 import { Player } from './types';
 
 // Convert grade to numeric value for balancing
+export const getMatchTypeLabel = (team1: Player[], team2: Player[]) => {
+  const allPlayers = [...team1, ...team2];
+  const mCount = allPlayers.filter(p => p.gender === 'M' || !p.gender).length;
+  const fCount = allPlayers.filter(p => p.gender === 'F').length;
+  
+  if (fCount === 0) return 'MD';
+  if (mCount === 0) return 'WD';
+  return 'XD';
+};
+
 export const getGradeValue = (grade: string): number => {
   const map: Record<string, number> = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1, 'E': 0 };
   return map[grade] ?? 0;
@@ -90,7 +100,7 @@ export const generateMatches = (
       matches.push({
         round_num: r,
         court_num: i + 1,
-        match_type: 'MD',
+        match_type: getMatchTypeLabel(bluePairs[i], whitePairs[i]),
         blue_team: bluePairs[i],
         white_team: whitePairs[i],
         blue_handicap: 0,

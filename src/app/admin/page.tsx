@@ -41,6 +41,7 @@ export default function AdminPage() {
   const [deleteCode, setDeleteCode] = useState("");
   const [guestName, setGuestName] = useState("");
   const [guestGrade, setGuestGrade] = useState("E");
+  const [guestGender, setGuestGender] = useState<"M"|"F">("M");
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [editingTournamentName, setEditingTournamentName] = useState("");
   const [editingTournamentDate, setEditingTournamentDate] = useState("");
@@ -104,12 +105,13 @@ export default function AdminPage() {
   const openGuestModal = () => {
     setGuestName("");
     setGuestGrade("E");
+    setGuestGender("M");
     setIsGuestModalOpen(true);
   };
 
   const saveGuest = async () => {
     if (!guestName.trim()) return;
-    const { data, error } = await supabase.from('players').insert({ name: guestName.trim(), grade: guestGrade }).select().single();
+    const { data, error } = await supabase.from('players').insert({ name: guestName.trim(), grade: guestGrade, gender: guestGender }).select().single();
     if (data) {
       setDbPlayers([...dbPlayers, data].sort((a, b) => a.grade.localeCompare(b.grade)));
       const newSet = new Set(selectedPlayerIds);
@@ -1083,11 +1085,24 @@ export default function AdminPage() {
                   onKeyDown={(e) => e.key === 'Enter' && saveGuest()}
                 />
               </div>
-              <div className="relative">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">급수</label>
-                <select 
-                  value={guestGrade} 
-                  onChange={(e) => setGuestGrade(e.target.value)}
+              <div className="flex gap-4">
+                <div className="flex-1 relative">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">성별</label>
+                  <select 
+                    value={guestGender} 
+                    onChange={(e) => setGuestGender(e.target.value as 'M'|'F')}
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all font-medium cursor-pointer appearance-none"
+                  >
+                    <option value="M">남성</option>
+                    <option value="F">여성</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-10 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
+                <div className="flex-1 relative">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">급수</label>
+                  <select 
+                    value={guestGrade} 
+                    onChange={(e) => setGuestGrade(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all font-medium cursor-pointer appearance-none"
                 >
                   <option value="S">S급</option>
@@ -1097,7 +1112,8 @@ export default function AdminPage() {
                   <option value="D">D급</option>
                   <option value="E">E급 (초심)</option>
                 </select>
-                <ChevronDown className="absolute right-4 top-10 w-5 h-5 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-4 top-10 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
               </div>
             </div>
             <button 

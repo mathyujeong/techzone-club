@@ -5,6 +5,7 @@ export interface Player {
   name: string;
   grade: Grade;
   default_penalty: number;
+  gender?: 'M' | 'F';
   created_at: string;
 }
 
