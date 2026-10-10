@@ -807,18 +807,18 @@ export default function AdminPage() {
           <>
       {/* 상단 헤더 */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="container mx-auto flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between sm:py-4">
           
-          <h1 className="text-xl md:text-2xl font-black flex items-center gap-2">
-            <Settings className="text-gray-400" />
+          <h1 className="flex shrink-0 items-center gap-2 whitespace-nowrap text-lg font-black leading-tight md:text-2xl">
+            <Settings className="h-5 w-5 shrink-0 text-gray-400 md:h-6 md:w-6" />
             점수 관리 보드
           </h1>
-          <div className="flex gap-2">
-            <button onClick={() => { setGeneratedBracket([]); setIsGeneratorModalOpen(true); }} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-1 hover:bg-blue-700 shadow-sm">
-              <RefreshCw className="w-4 h-4" /> 새 대진표 자동생성
+          <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto">
+            <button onClick={() => { setGeneratedBracket([]); setIsGeneratorModalOpen(true); }} className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-blue-600 px-2 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 sm:px-3 sm:text-sm">
+              <RefreshCw className="h-4 w-4 shrink-0" /> 새 대진표 자동생성
             </button>
-            <button onClick={addMatch} className="bg-gray-900 dark:bg-gray-100 text-white dark:text-black px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-1 hover:opacity-80">
-              <Plus className="w-4 h-4" /> 빈 경기 추가
+            <button onClick={addMatch} className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-2.5 text-xs font-bold text-white hover:opacity-80 dark:bg-gray-100 dark:text-black sm:px-3 sm:text-sm">
+              <Plus className="h-4 w-4 shrink-0" /> 빈 경기 추가
             </button>
           </div>
 
