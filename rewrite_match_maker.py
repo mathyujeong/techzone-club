@@ -1,4 +1,7 @@
-import { Player } from './types';
+with open('src/lib/matchMaker.ts', 'r') as f:
+    lines = f.readlines()
+
+new_content = """import { Player } from './types';
 
 // Convert grade to numeric value for balancing
 export const getGradeValue = (grade: string): number => {
@@ -96,3 +99,6 @@ export const generateMatches = (
 
   return matches;
 };
+"""
+with open('src/lib/matchMaker.ts', 'w') as f:
+    f.write(new_content)

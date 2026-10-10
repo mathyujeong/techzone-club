@@ -26,6 +26,10 @@ export default function AdminPage() {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
   const [generatedBracket, setGeneratedBracket] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const [numCourts, setNumCourts] = useState(3);
+  const [numRounds, setNumRounds] = useState(5);
+
   const [tournaments, setTournaments] = useState<any[]>([]);
 
   const [isPlayerManageModalOpen, setIsPlayerManageModalOpen] = useState(false);
@@ -91,7 +95,7 @@ export default function AdminPage() {
     setIsGenerating(true);
     setTimeout(() => {
       const activePlayers = dbPlayers.filter(p => selectedPlayerIds.has(p.id));
-      const matches = generateMatches(activePlayers, 'TEAM', 7);
+      const matches = generateMatches(activePlayers, 'TEAM', numCourts, numRounds);
       setGeneratedBracket(matches);
       setIsGenerating(false);
     }, 600);
@@ -109,8 +113,8 @@ export default function AdminPage() {
 
     const matchInserts = generatedBracket.map((m, i) => ({
       tournament_id: tData.id,
-      round_num: Math.floor(i / 3) + 1,
-      court_num: (i % 3) + 1,
+      round_num: m.round_num || Math.floor(i / numCourts) + 1,
+      court_num: m.court_num || (i % numCourts) + 1,
       match_type: m.match_type + ':0:0',
       blue_player1: m.blue_team[0].name,
       blue_player2: m.blue_team[1].name,
@@ -829,10 +833,27 @@ export default function AdminPage() {
                     </label>
                   ))}
                 </div>
+                <div className="flex gap-2">
+                  <div className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 flex flex-col justify-center">
+                    <label className="text-xs text-gray-500 font-bold mb-1">코트 수</label>
+                    <div className="flex items-center gap-2">
+                      <input type="number" min="1" max="10" value={numCourts} onChange={e => setNumCourts(parseInt(e.target.value) || 1)} className="w-full bg-transparent font-bold outline-none" />
+                      <span className="text-sm text-gray-400">면</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 flex flex-col justify-center">
+                    <label className="text-xs text-gray-500 font-bold mb-1">총 라운드</label>
+                    <div className="flex items-center gap-2">
+                      <input type="number" min="1" max="20" value={numRounds} onChange={e => setNumRounds(parseInt(e.target.value) || 1)} className="w-full bg-transparent font-bold outline-none" />
+                      <span className="text-sm text-gray-400">R</span>
+                    </div>
+                  </div>
+                </div>
+
                 <button 
                   onClick={handleGenerate}
                   disabled={isGenerating || selectedPlayerIds.size < 4}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-md"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-md mt-2"
                 >
                   <RefreshCw className={`w-5 h-5 ${isGenerating ? 'animate-spin' : ''}`} />
                   알고리즘으로 대진표 짜기
@@ -851,6 +872,7 @@ export default function AdminPage() {
                     {generatedBracket.map((m, idx) => (
                       <div key={idx} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex shadow-sm hover:border-blue-300 transition-colors">
                         <div className="flex-1 flex flex-col justify-center gap-2 border-r border-gray-100 dark:border-gray-800 pr-4">
+                          <span className="text-xs font-black text-gray-500 mb-1">{m.round_num}R - {m.court_num}코트</span>
                           <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded w-max">청팀</span>
                           <div className="flex gap-2">
                             <button onClick={() => handleSwapGenerated(idx, 'blue', 0)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all">{m.blue_team[0].name} <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[0].grade}</span></button>
