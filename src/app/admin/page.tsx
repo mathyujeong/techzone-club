@@ -161,6 +161,12 @@ export default function AdminPage() {
     }, 600);
   };
 
+    const toggleMatchType = async (newType: 'TEAM' | 'INDIVIDUAL') => {
+    if (!selectedTournamentId) return;
+    await supabase.from('tournaments').update({ match_type: newType }).eq('id', selectedTournamentId);
+    setTournaments(tournaments.map(t => t.id === selectedTournamentId ? { ...t, match_type: newType } : t));
+  };
+
   const saveTournament = async () => {
     if (!selectedTournamentId) {
       alert("선택된 대회가 없습니다. 왼쪽 메뉴에서 대회를 먼저 선택하거나 '새 대회 추가'를 눌러주세요.");
@@ -779,10 +785,27 @@ export default function AdminPage() {
       {/* 통계 패널 */}
       <div className="container mx-auto px-4 pt-8">
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-          <h2 className="text-lg font-bold mb-6 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-4">
-            <Users className="text-yellow-600 w-5 h-5" />
-            {isIndividualMode ? '개인별 배정 경기 수 및 승률 (성적순)' : '팀 구성 및 선수별 배정 경기 수'}
-          </h2>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <Users className="text-yellow-600 w-5 h-5" />
+              {isIndividualMode ? '개인별 배정 경기 수 및 승률 (성적순)' : '팀 구성 및 선수별 배정 경기 수'}
+            </h2>
+            
+            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl text-xs font-bold self-end sm:self-auto shadow-inner">
+              <button 
+                onClick={() => toggleMatchType('TEAM')} 
+                className={`px-3 py-1.5 rounded-lg transition-all ${!isIndividualMode ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                청백전 (팀전)
+              </button>
+              <button 
+                onClick={() => toggleMatchType('INDIVIDUAL')} 
+                className={`px-3 py-1.5 rounded-lg transition-all ${isIndividualMode ? 'bg-white dark:bg-gray-700 text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                개인전 (랜덤 매치)
+              </button>
+            </div>
+          </div>
           
           {isIndividualMode ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
