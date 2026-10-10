@@ -11,6 +11,13 @@ export default function TournamentPage() {
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [dbPlayers, setDbPlayers] = useState<any[]>([]);
+  const [showGrades, setShowGrades] = useState(false);
+  
+  const getPlayerGrade = (name: string) => {
+    const p = dbPlayers.find(player => player.name === name);
+    return p ? p.grade : '';
+  };
 
   async function fetchAllData() {
     const { data: tData } = await supabase
@@ -263,8 +270,8 @@ export default function TournamentPage() {
                             : 'bg-blue-50/50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/50'
                       }`}>
                         <div className="text-xs font-black text-blue-600 dark:text-blue-400 mb-2 flex justify-center items-center gap-1">청팀 {bluePen && bluePen !== '0' && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full">패널티 {bluePen}</span>}</div>
-                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed">{match.blue_player1}</div>
-                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed">{match.blue_player2}</div>
+                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.blue_player1}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.blue_player1))}</span>}</div>
+                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.blue_player2}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.blue_player2))}</span>}</div>
                         
                         {match.status === 'completed' && match.blue_score > match.white_score && (
                           <div className="absolute -top-3 -right-3">
@@ -285,8 +292,8 @@ export default function TournamentPage() {
                             : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                       }`}>
                         <div className="text-xs font-black text-gray-600 dark:text-gray-400 mb-2 flex justify-center items-center gap-1">백팀 {whitePen && whitePen !== '0' && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full">패널티 {whitePen}</span>}</div>
-                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed">{match.white_player1}</div>
-                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed">{match.white_player2}</div>
+                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.white_player1}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.white_player1))}</span>}</div>
+                        <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.white_player2}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.white_player2))}</span>}</div>
                         
                         {match.status === 'completed' && match.white_score > match.blue_score && (
                           <div className="absolute -top-3 -right-3">

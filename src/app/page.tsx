@@ -12,7 +12,7 @@ export default function Home() {
 
       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 text-sm font-medium mb-8 border border-yellow-200 dark:border-yellow-800/50">
         <Trophy className="w-4 h-4" />
-        <span>제 1회 테크존 클럽 월례회 개최!</span>
+        <span>🔥 우리들의 경기 (실시간 대진표)</span>
       </div>
       
       <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
@@ -24,7 +24,7 @@ export default function Home() {
       
       <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl">
         SINCE 2026. 실력에 상관없이 누구나 즐겁게 운동할 수 있는 열린 모임입니다. 
-        이번 월례회 대진표를 확인하고 결과를 실시간으로 공유해보세요.
+        새롭게 짜여진 대진표를 확인하고 경기 결과를 실시간으로 공유해보세요.
       </p>
       
       <div className="flex flex-col sm:flex-row gap-4">
