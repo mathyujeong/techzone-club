@@ -123,9 +123,9 @@ export default function AdminPage() {
     }
   };
 
-  const updatePlayerGrade = async (id: string, newGrade: string) => {
-    await supabase.from('players').update({ grade: newGrade as any }).eq('id', id);
-    setDbPlayers(dbPlayers.map(p => p.id === id ? { ...p, grade: newGrade as any } : p));
+  const updatePlayer = async (id: string, updates: any) => {
+    await supabase.from('players').update(updates).eq('id', id);
+    setDbPlayers(dbPlayers.map(p => p.id === id ? { ...p, ...updates } : p).sort((a, b) => a.grade.localeCompare(b.grade)));
   };
 
   async function fetchPlayersAndTournaments() {
@@ -1038,19 +1038,29 @@ export default function AdminPage() {
                 <div key={p.id} className="flex items-center justify-between bg-white dark:bg-gray-900 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
                   <span className="font-bold">{p.name}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400">급수 변경:</span>
-                    <select 
-                      value={p.grade}
-                      onChange={(e) => updatePlayerGrade(p.id, e.target.value)}
-                      className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 font-bold outline-none cursor-pointer"
-                    >
-                      <option value="S">S급</option>
-                      <option value="A">A급</option>
-                      <option value="B">B급</option>
-                      <option value="C">C급</option>
-                      <option value="D">D급</option>
-                      <option value="E">E급</option>
-                    </select>
+                    <span className="text-xs text-gray-400">성별/급수:</span>
+                    <div className="flex gap-1">
+                      <select 
+                        value={p.gender || 'M'} 
+                        onChange={(e) => updatePlayer(p.id, { gender: e.target.value })}
+                        className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 font-bold outline-none cursor-pointer text-blue-600 dark:text-blue-400"
+                      >
+                        <option value="M">남</option>
+                        <option value="F">여</option>
+                      </select>
+                      <select 
+                        value={p.grade} 
+                        onChange={(e) => updatePlayer(p.id, { grade: e.target.value })}
+                        className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 font-bold outline-none cursor-pointer"
+                      >
+                        <option value="S">S급</option>
+                        <option value="A">A급</option>
+                        <option value="B">B급</option>
+                        <option value="C">C급</option>
+                        <option value="D">D급</option>
+                        <option value="E">E급</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               ))}
