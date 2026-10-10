@@ -31,7 +31,6 @@ export default function AdminPage() {
   const [numCourts, setNumCourts] = useState(3);
   const [numRounds, setNumRounds] = useState(5);
   const [ignoreGrade, setIgnoreGrade] = useState(false);
-  const [hideGrade, setHideGrade] = useState(false);
   const [matchType, setMatchType] = useState<'TEAM' | 'INDIVIDUAL'>('TEAM');
 
   const [tournaments, setTournaments] = useState<any[]>([]);
@@ -345,7 +344,13 @@ export default function AdminPage() {
   };
 
   if (!authed) {
-    return (
+  
+  const getPlayerGrade = (name: string) => {
+    const p = dbPlayers.find(player => player.name === name);
+    return p ? p.grade : '';
+  };
+
+  return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-xl w-full max-w-sm text-center border border-gray-200 dark:border-gray-800">
           <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-6" />
@@ -421,6 +426,12 @@ export default function AdminPage() {
 
   const roundNums = Array.from(new Set(currentMatches.map(m => m.round_num))).sort((a, b) => a - b);
 
+
+
+  const getPlayerGrade = (name: string) => {
+    const p = dbPlayers.find(player => player.name === name);
+    return p ? p.grade : '';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col md:flex-row">
@@ -812,7 +823,13 @@ export default function AdminPage() {
       <div className="container mx-auto px-4 py-8 space-y-12">
         {roundNums.map(roundNum => {
           const roundMatches = currentMatches.filter(m => m.round_num === roundNum);
-          return (
+        
+  const getPlayerGrade = (name: string) => {
+    const p = dbPlayers.find(player => player.name === name);
+    return p ? p.grade : '';
+  };
+
+  return (
             <div key={roundNum} className="space-y-4">
               <h2 className="text-2xl font-black flex items-center gap-2 text-gray-800 dark:text-gray-200">
                 <span className="bg-yellow-500 text-white px-3 py-1 rounded-lg text-lg">{roundNum}R</span>
@@ -822,7 +839,13 @@ export default function AdminPage() {
                 {roundMatches.map(m => {
                   const [actualType, bluePen, whitePen] = (m.match_type || '').split(':');
                   const tName = actualType === 'MD' ? '남복' : actualType === 'WD' ? '여복' : actualType === 'XD' ? '혼복' : actualType;
-                  return (
+                
+  const getPlayerGrade = (name: string) => {
+    const p = dbPlayers.find(player => player.name === name);
+    return p ? p.grade : '';
+  };
+
+  return (
                   <div key={m.id} className={`flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-sm border overflow-hidden ${m.status === 'completed' ? 'border-gray-200 opacity-70' : 'border-blue-200 dark:border-blue-900/50'}`}>
                     {/* 코트 번호 헤더 */}
                     <div className="bg-gray-100 dark:bg-gray-800 p-2 flex justify-between items-center border-b border-gray-200 dark:border-gray-700 whitespace-nowrap">
@@ -843,8 +866,14 @@ export default function AdminPage() {
                         className="font-black text-sm sm:text-base text-blue-700 dark:text-blue-400 cursor-pointer w-full flex flex-col justify-center min-w-0 pr-2"
                         onClick={() => editPlayers(m.id, 'blue', m.blue_player1, m.blue_player2)}
                       >
-                        <div className="truncate w-full">{m.blue_player1}</div>
-                        <div className="truncate w-full">{m.blue_player2}</div>
+                        <div className="truncate w-full flex justify-between items-center">
+                          <span>{m.blue_player1}</span>
+                          <span className="text-[10px] font-black opacity-50 ml-1">{getPlayerGrade(m.blue_player1)}</span>
+                        </div>
+                        <div className="truncate w-full flex justify-between items-center">
+                          <span>{m.blue_player2}</span>
+                          <span className="text-[10px] font-black opacity-50 ml-1">{getPlayerGrade(m.blue_player2)}</span>
+                        </div>
                         {bluePen && bluePen !== '0' && <div className="text-[10px] font-bold text-red-500 mt-0.5">패널티 {bluePen}</div>}
                       </div>
                       <button 
@@ -865,8 +894,14 @@ export default function AdminPage() {
                         className="font-black text-sm sm:text-base text-gray-700 dark:text-gray-300 cursor-pointer w-full flex flex-col justify-center min-w-0 pr-2"
                         onClick={() => editPlayers(m.id, 'white', m.white_player1, m.white_player2)}
                       >
-                        <div className="truncate w-full">{m.white_player1}</div>
-                        <div className="truncate w-full">{m.white_player2}</div>
+                        <div className="truncate w-full flex justify-between items-center">
+                          <span>{m.white_player1}</span>
+                          <span className="text-[10px] font-black opacity-50 ml-1">{getPlayerGrade(m.white_player1)}</span>
+                        </div>
+                        <div className="truncate w-full flex justify-between items-center">
+                          <span>{m.white_player2}</span>
+                          <span className="text-[10px] font-black opacity-50 ml-1">{getPlayerGrade(m.white_player2)}</span>
+                        </div>
                         {whitePen && whitePen !== '0' && <div className="text-[10px] font-bold text-red-500 mt-0.5">패널티 {whitePen}</div>}
                       </div>
                       <button 
@@ -960,10 +995,7 @@ export default function AdminPage() {
                       <input type="checkbox" checked={ignoreGrade} onChange={e => setIgnoreGrade(e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
                       급수 무관 매칭
                     </label>
-                    <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
-                      <input type="checkbox" checked={hideGrade} onChange={e => setHideGrade(e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
-                      대진표 급수 숨기기
-                    </label>
+
                   </div>
                 </div>
 
@@ -1092,11 +1124,11 @@ export default function AdminPage() {
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded w-max mb-0.5 ${matchType === 'TEAM' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 bg-gray-100 dark:bg-gray-800'}`}>{matchType === 'TEAM' ? '청팀' : 'A조'}</span>
                             <button onClick={() => handleSwapGenerated(idx, 'blue', 0)} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 hover:text-blue-600 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0">
                               <span className="truncate">{m.blue_team[0].name}</span>
-                              {!hideGrade && <span className="text-[10px] font-black text-gray-400 group-hover:text-blue-400 ml-1 shrink-0">{m.blue_team[0].grade}</span>}
+                              {<span className="text-[10px] font-black text-gray-400 group-hover:text-blue-400 ml-1 shrink-0">{m.blue_team[0].grade}</span>}
                             </button>
                             <button onClick={() => handleSwapGenerated(idx, 'blue', 1)} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 hover:text-blue-600 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0">
                               <span className="truncate">{m.blue_team[1].name}</span>
-                              {!hideGrade && <span className="text-[10px] font-black text-gray-400 group-hover:text-blue-400 ml-1 shrink-0">{m.blue_team[1].grade}</span>}
+                              {<span className="text-[10px] font-black text-gray-400 group-hover:text-blue-400 ml-1 shrink-0">{m.blue_team[1].grade}</span>}
                             </button>
                           </div>
                           
@@ -1108,11 +1140,11 @@ export default function AdminPage() {
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded w-max mb-0.5 ${matchType === 'TEAM' ? 'text-gray-600 bg-gray-100 dark:bg-gray-800' : 'text-gray-600 bg-gray-100 dark:bg-gray-800'}`}>{matchType === 'TEAM' ? '백팀' : 'B조'}</span>
                             <button onClick={() => handleSwapGenerated(idx, 'white', 0)} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 hover:text-gray-800 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0">
                               <span className="truncate">{m.white_team[0].name}</span>
-                              {!hideGrade && <span className="text-[10px] font-black text-gray-400 group-hover:text-gray-500 ml-1 shrink-0">{m.white_team[0].grade}</span>}
+                              {<span className="text-[10px] font-black text-gray-400 group-hover:text-gray-500 ml-1 shrink-0">{m.white_team[0].grade}</span>}
                             </button>
                             <button onClick={() => handleSwapGenerated(idx, 'white', 1)} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 hover:text-gray-800 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0">
                               <span className="truncate">{m.white_team[1].name}</span>
-                              {!hideGrade && <span className="text-[10px] font-black text-gray-400 group-hover:text-gray-500 ml-1 shrink-0">{m.white_team[1].grade}</span>}
+                              {<span className="text-[10px] font-black text-gray-400 group-hover:text-gray-500 ml-1 shrink-0">{m.white_team[1].grade}</span>}
                             </button>
                           </div>
                         </div>
