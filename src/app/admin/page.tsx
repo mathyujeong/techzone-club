@@ -805,8 +805,13 @@ export default function AdminPage() {
           </div>
           
           {isIndividualMode ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {individualStats.map(s => (
+            individualStats.length === 0 ? (
+              <div className="text-center py-8 text-gray-400 text-sm font-medium">
+                아직 생성된 경기가 없습니다. 상단의 [새 대진표 자동생성] 버튼을 누르면 출전 선수별 성적이 여기에 표시됩니다.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {individualStats.map(s => (
                 <div key={s.name} className="bg-gray-50 border border-gray-200 text-gray-800 p-3 rounded-2xl text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 flex flex-col items-center justify-between shadow-sm hover:border-yellow-400 transition-colors">
                   <span className="font-black text-base mb-1">{s.name}</span>
                   <div className="flex items-center gap-1.5 text-xs">
@@ -818,6 +823,7 @@ export default function AdminPage() {
                 </div>
               ))}
             </div>
+            )
           ) : (
             <div className="flex flex-col md:flex-row gap-8">
               <div className="flex-1">

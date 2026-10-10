@@ -199,8 +199,13 @@ export default function TournamentPage() {
           </h2>
           
           {isIndividualMode ? (
-            <div className="flex flex-col gap-2">
-              {individualStats.map(s => {
+            individualStats.length === 0 ? (
+              <div className="text-center py-6 text-gray-400 text-xs font-medium">
+                아직 생성된 경기가 없습니다.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {individualStats.map(s => {
                 const isSelected = selectedPlayer === s.name;
                 return (
                   <div key={s.name} onClick={() => setSelectedPlayer(isSelected ? null : s.name)} className={`flex justify-between items-center text-sm cursor-pointer p-2.5 rounded-xl transition-all ${isSelected ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-500 shadow-sm' : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
@@ -215,6 +220,7 @@ export default function TournamentPage() {
                 );
               })}
             </div>
+            )
           ) : (
             <div className="flex gap-4">
               <div className="flex-1">
