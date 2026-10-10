@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 
 import { generateMatches } from '@/lib/matchMaker';
 import { Player } from '@/lib/types';
-import { RefreshCw, Save, X } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { Settings, Plus, Minus, Check, Play, Pause, RefreshCw, Trophy, Users, Trash2, ChevronDown } from "lucide-react";
 
 export default function AdminPage() {

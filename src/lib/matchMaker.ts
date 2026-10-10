@@ -56,8 +56,8 @@ export const generateMatches = (
 
   if (matchType === 'TEAM') {
     // Divide pairs into Blue and White teams
-    const bluePairs = [];
-    const whitePairs = [];
+    const bluePairs: Player[][] = [];
+    const whitePairs: Player[][] = [];
     
     pairs.forEach((pair, idx) => {
       if (idx % 2 === 0) bluePairs.push(pair);
