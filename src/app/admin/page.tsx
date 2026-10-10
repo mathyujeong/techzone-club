@@ -31,6 +31,7 @@ export default function AdminPage() {
   const [numRounds, setNumRounds] = useState(5);
   const [ignoreGrade, setIgnoreGrade] = useState(false);
   const [hideGrade, setHideGrade] = useState(false);
+  const [matchType, setMatchType] = useState<'TEAM' | 'INDIVIDUAL'>('TEAM');
 
   const [tournaments, setTournaments] = useState<any[]>([]);
 
@@ -103,7 +104,7 @@ export default function AdminPage() {
     setIsGenerating(true);
     setTimeout(() => {
       const activePlayers = dbPlayers.filter(p => selectedPlayerIds.has(p.id));
-      const matches = generateMatches(activePlayers, 'TEAM', numCourts, numRounds, ignoreGrade);
+      const matches = generateMatches(activePlayers, matchType, numCourts, numRounds, ignoreGrade);
       setGeneratedBracket(matches);
       setIsGenerating(false);
     }, 600);
@@ -857,6 +858,17 @@ export default function AdminPage() {
                     </label>
                   ))}
                 </div>
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 shrink-0">
+                  <label className="text-xs text-gray-500 font-bold mb-1 block">경기 방식</label>
+                  <select 
+                    value={matchType} 
+                    onChange={e => setMatchType(e.target.value as 'TEAM' | 'INDIVIDUAL')}
+                    className="w-full bg-transparent font-bold outline-none cursor-pointer"
+                  >
+                    <option value="TEAM">청백전 (팀전)</option>
+                    <option value="INDIVIDUAL">개인전 (랜덤 매치)</option>
+                  </select>
+                </div>
                 <div className="flex gap-2 shrink-0">
                   <div className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-2 flex flex-col justify-center">
                     <label className="text-xs text-gray-500 font-bold mb-1">코트 수</label>
@@ -907,7 +919,7 @@ export default function AdminPage() {
                       <div key={idx} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex shadow-sm hover:border-blue-300 transition-colors">
                         <div className="flex-1 flex flex-col justify-center gap-2 border-r border-gray-100 dark:border-gray-800 pr-4">
                           <span className="text-xs font-black text-gray-500 mb-1">{m.round_num}R - {m.court_num}코트</span>
-                          <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded w-max">청팀</span>
+                          <span className={`text-xs font-black px-2 py-1 rounded w-max ${matchType === 'TEAM' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 bg-gray-100 dark:bg-gray-800'}`}>{matchType === 'TEAM' ? '청팀' : 'A조'}</span>
                           <div className="flex gap-2">
                             <button onClick={() => handleSwapGenerated(idx, 'blue', 0)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all">{m.blue_team[0].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[0].grade}</span>}</button>
                             <button onClick={() => handleSwapGenerated(idx, 'blue', 1)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all">{m.blue_team[1].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[1].grade}</span>}</button>
@@ -915,7 +927,7 @@ export default function AdminPage() {
                         </div>
                         <div className="px-5 flex items-center justify-center font-black text-gray-300 italic text-lg">VS</div>
                         <div className="flex-1 flex flex-col justify-center gap-2 pl-4">
-                          <span className="text-xs font-black text-gray-600 bg-gray-100 px-2 py-1 rounded w-max">백팀</span>
+                          <span className="text-xs font-black text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded w-max">{matchType === 'TEAM' ? '백팀' : 'B조'}</span>
                           <div className="flex gap-2">
                             <button onClick={() => handleSwapGenerated(idx, 'white', 0)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all">{m.white_team[0].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[0].grade}</span>}</button>
                             <button onClick={() => handleSwapGenerated(idx, 'white', 1)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all">{m.white_team[1].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[1].grade}</span>}</button>
