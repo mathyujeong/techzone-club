@@ -29,7 +29,8 @@ export const generateMatches = (
   players: Player[], 
   matchType: 'TEAM' | 'INDIVIDUAL',
   numCourts: number = 3,
-  numRounds: number = 5
+  numRounds: number = 5,
+  ignoreGrade: boolean = false
 ) => {
   const matches = [];
   const playCounts: Record<string, number> = {};
@@ -47,15 +48,23 @@ export const generateMatches = (
     const neededPlayers = numCourts * 4;
     const roundPlayers = available.slice(0, Math.min(neededPlayers, available.length));
     
-    // Sort roundPlayers by grade to balance High + Low
-    roundPlayers.sort((a, b) => getGradeValue(b.grade) - getGradeValue(a.grade));
-
-    // Greedy pairing
     const pairs: Player[][] = [];
-    while (roundPlayers.length >= 2) {
-      const p1 = roundPlayers.shift()!;
-      const p2 = roundPlayers.pop()!;
-      pairs.push([p1, p2]);
+    
+    if (ignoreGrade) {
+      roundPlayers.sort(() => Math.random() - 0.5);
+      for (let i = 0; i < roundPlayers.length - 1; i += 2) {
+        pairs.push([roundPlayers[i], roundPlayers[i+1]]);
+      }
+    } else {
+      // Sort roundPlayers by grade to balance High + Low
+      roundPlayers.sort((a, b) => getGradeValue(b.grade) - getGradeValue(a.grade));
+
+      // Greedy pairing
+      while (roundPlayers.length >= 2) {
+        const p1 = roundPlayers.shift()!;
+        const p2 = roundPlayers.pop()!;
+        pairs.push([p1, p2]);
+      }
     }
 
     pairs.sort(() => Math.random() - 0.5); // Shuffle pairs

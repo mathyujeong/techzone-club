@@ -29,6 +29,8 @@ export default function AdminPage() {
 
   const [numCourts, setNumCourts] = useState(3);
   const [numRounds, setNumRounds] = useState(5);
+  const [ignoreGrade, setIgnoreGrade] = useState(false);
+  const [hideGrade, setHideGrade] = useState(false);
 
   const [tournaments, setTournaments] = useState<any[]>([]);
 
@@ -97,7 +99,7 @@ export default function AdminPage() {
     setIsGenerating(true);
     setTimeout(() => {
       const activePlayers = dbPlayers.filter(p => selectedPlayerIds.has(p.id));
-      const matches = generateMatches(activePlayers, 'TEAM', numCourts, numRounds);
+      const matches = generateMatches(activePlayers, 'TEAM', numCourts, numRounds, ignoreGrade);
       setGeneratedBracket(matches);
       setIsGenerating(false);
     }, 600);
@@ -868,6 +870,16 @@ export default function AdminPage() {
                   </div>
                 </div>
 
+                <div className="flex gap-4 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
+                    <input type="checkbox" checked={ignoreGrade} onChange={e => setIgnoreGrade(e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
+                    급수 무관 (랜덤 편성)
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
+                    <input type="checkbox" checked={hideGrade} onChange={e => setHideGrade(e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
+                    대진표 급수 숨기기
+                  </label>
+                </div>
                 <button 
                   onClick={handleGenerate}
                   disabled={isGenerating || selectedPlayerIds.size < 4}
@@ -893,16 +905,16 @@ export default function AdminPage() {
                           <span className="text-xs font-black text-gray-500 mb-1">{m.round_num}R - {m.court_num}코트</span>
                           <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded w-max">청팀</span>
                           <div className="flex gap-2">
-                            <button onClick={() => handleSwapGenerated(idx, 'blue', 0)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all">{m.blue_team[0].name} <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[0].grade}</span></button>
-                            <button onClick={() => handleSwapGenerated(idx, 'blue', 1)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all">{m.blue_team[1].name} <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[1].grade}</span></button>
+                            <button onClick={() => handleSwapGenerated(idx, 'blue', 0)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all">{m.blue_team[0].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[0].grade}</span>}</button>
+                            <button onClick={() => handleSwapGenerated(idx, 'blue', 1)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all">{m.blue_team[1].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[1].grade}</span>}</button>
                           </div>
                         </div>
                         <div className="px-5 flex items-center justify-center font-black text-gray-300 italic text-lg">VS</div>
                         <div className="flex-1 flex flex-col justify-center gap-2 pl-4">
                           <span className="text-xs font-black text-gray-600 bg-gray-100 px-2 py-1 rounded w-max">백팀</span>
                           <div className="flex gap-2">
-                            <button onClick={() => handleSwapGenerated(idx, 'white', 0)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all">{m.white_team[0].name} <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[0].grade}</span></button>
-                            <button onClick={() => handleSwapGenerated(idx, 'white', 1)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all">{m.white_team[1].name} <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[1].grade}</span></button>
+                            <button onClick={() => handleSwapGenerated(idx, 'white', 0)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all">{m.white_team[0].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[0].grade}</span>}</button>
+                            <button onClick={() => handleSwapGenerated(idx, 'white', 1)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all">{m.white_team[1].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[1].grade}</span>}</button>
                           </div>
                         </div>
                       </div>
