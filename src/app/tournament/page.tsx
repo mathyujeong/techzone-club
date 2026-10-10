@@ -83,10 +83,6 @@ export default function TournamentPage() {
   // 선수별 통계
   const isIndividualMode = activeTournament?.match_type === 'INDIVIDUAL';
   const playerStatsMap: Record<string, { matches: number, wins: number, losses: number, team: 'BLUE' | 'WHITE' | 'MIXED' }> = {};
-  
-  dbPlayers.forEach(p => {
-    playerStatsMap[p.name] = { matches: 0, wins: 0, losses: 0, team: 'MIXED' };
-  });
 
   matches.forEach(m => {
     const isCompleted = m.status === 'completed';

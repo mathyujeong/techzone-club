@@ -422,9 +422,6 @@ export default function AdminPage() {
   const isIndividualMode = selectedTournament?.match_type === 'INDIVIDUAL';
 
   const playerStatsMap: Record<string, { matches: number, wins: number, losses: number, team: 'BLUE' | 'WHITE' | 'MIXED' }> = {};
-  dbPlayers.forEach(p => {
-    playerStatsMap[p.name] = { matches: 0, wins: 0, losses: 0, team: 'MIXED' };
-  });
   
   currentMatches.forEach(m => {
     const isCompleted = m.status === 'completed';
@@ -455,7 +452,7 @@ export default function AdminPage() {
     addStat(m.white_player2, false);
   });
 
-  const allStats = Object.entries(playerStatsMap).map(([name, data]) => ({ name, ...data }));
+  const allStats = Object.entries(playerStatsMap).map(([name, data]) => ({ name, ...data })).filter(s => s.matches > 0);
   
   const blueTeamStats = allStats.filter(s => s.team === 'BLUE').sort((a, b) => b.matches - a.matches || b.wins - a.wins);
   const whiteTeamStats = allStats.filter(s => s.team === 'WHITE').sort((a, b) => b.matches - a.matches || b.wins - a.wins);
