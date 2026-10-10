@@ -1,11 +1,20 @@
-import re
+import sys
 
 with open('src/app/admin/page.tsx', 'r') as f:
     content = f.read()
 
-# We need to replace the entire `const saveTournament = async () => { ... }` block.
-# Let's use regex.
-pattern = r"  const saveTournament = async \(\) => \{.*?setIsGeneratorModalOpen\(false\);.*?fetchPlayersAndTournaments\(\);.*?  \};\n"
+start_token = "  const saveTournament = async () => {"
+end_token = "    alert('새 대진표가 성공적으로 적용되었습니다!');\n  };"
+
+start_idx = content.find(start_token)
+end_idx = content.find(end_token)
+
+if start_idx == -1 or end_idx == -1:
+    print("Tokens not found!")
+    sys.exit(1)
+
+# Include the end_token's length
+end_idx += len(end_token)
 
 new_func = """  const saveTournament = async () => {
     if (!selectedTournamentId) {
@@ -38,11 +47,13 @@ new_func = """  const saveTournament = async () => {
 
     await supabase.from('matches').insert(matchInserts);
     setIsGeneratorModalOpen(false);
-    await fetchMatches(); // This immediately updates the view!
-    alert('대진표가 성공적으로 저장되었습니다!');
-  };\n"""
+    await fetchMatches();
+    alert('새 대진표가 성공적으로 적용되었습니다!');
+  };"""
 
-content = re.sub(pattern, new_func, content, flags=re.DOTALL)
+content = content[:start_idx] + new_func + content[end_idx:]
 
 with open('src/app/admin/page.tsx', 'w') as f:
     f.write(content)
+
+print("Replaced successfully!")
