@@ -35,6 +35,7 @@ export default function AdminPage() {
   const [isPlayerManageModalOpen, setIsPlayerManageModalOpen] = useState(false);
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [editingTournamentName, setEditingTournamentName] = useState("");
+  const [editingTournamentDate, setEditingTournamentDate] = useState("");
 
 
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
@@ -44,10 +45,11 @@ export default function AdminPage() {
 
   
   // --- Tournament Renaming ---
-  const saveTournamentName = async (id: string) => {
-    if(!editingTournamentName.trim()) return;
-    await supabase.from('tournaments').update({ title: editingTournamentName }).eq('id', id);
-    setTournaments(tournaments.map(t => t.id === id ? { ...t, title: editingTournamentName } : t));
+  const saveTournamentData = async (id: string) => {
+    if(!editingTournamentName.trim() || !editingTournamentDate) return;
+    const newDate = new Date(editingTournamentDate).toISOString();
+    await supabase.from('tournaments').update({ title: editingTournamentName, created_at: newDate }).eq('id', id);
+    setTournaments(tournaments.map(t => t.id === id ? { ...t, title: editingTournamentName, created_at: newDate } : t));
     setEditingTournamentId(null);
   };
 
@@ -374,34 +376,50 @@ export default function AdminPage() {
               onClick={() => setSelectedTournamentId(t.id)}
               className={`w-full text-left p-3 rounded-xl transition-colors flex flex-col gap-1 ${selectedTournamentId === t.id ? 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'}`}
             >
-              <div className="flex items-center justify-between w-full">
+              <div className="flex flex-col gap-1 w-full">
+                <div className="flex items-center justify-between w-full">
+                  {editingTournamentId === t.id ? (
+                    <input 
+                      type="text" 
+                      value={editingTournamentName}
+                      onChange={e => setEditingTournamentName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && saveTournamentData(t.id)}
+                      autoFocus
+                      className="flex-1 text-sm font-bold border border-blue-400 rounded px-1 py-0.5 w-full bg-white dark:bg-gray-800 text-black dark:text-white mb-1"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span className={`font-bold text-sm flex-1 ${selectedTournamentId === t.id ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-700 dark:text-gray-300'}`}>{t.title}</span>
+                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {editingTournamentId === t.id ? (
+                      <button onClick={(e) => { e.stopPropagation(); saveTournamentData(t.id); }} className="p-1 bg-blue-100 text-blue-600 rounded">
+                        <Check className="w-3 h-3" />
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setEditingTournamentId(t.id); setEditingTournamentName(t.title); setEditingTournamentDate(new Date(t.created_at).toISOString().split('T')[0]); }} 
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-gray-600"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                    )}
+                    <div className={`w-2 h-2 rounded-full ${t.status === 'IN_PROGRESS' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  </div>
+                </div>
                 {editingTournamentId === t.id ? (
-                  <input 
-                    type="text" 
-                    value={editingTournamentName}
-                    onChange={e => setEditingTournamentName(e.target.value)}
-                    onBlur={() => saveTournamentName(t.id)}
-                    onKeyDown={e => e.key === 'Enter' && saveTournamentName(t.id)}
-                    autoFocus
-                    className="flex-1 text-sm font-bold border border-blue-400 rounded px-1 py-0.5 w-full bg-white dark:bg-gray-800 text-black dark:text-white"
+                  <input
+                    type="date"
+                    value={editingTournamentDate}
+                    onChange={e => setEditingTournamentDate(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && saveTournamentData(t.id)}
+                    className="text-[10px] border border-blue-400 rounded px-1 py-0.5 w-max bg-white dark:bg-gray-800 text-black dark:text-white"
                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
-                  <span className={`font-bold text-sm flex-1 ${selectedTournamentId === t.id ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-700 dark:text-gray-300'}`}>{t.title}</span>
+                  <span className="text-[10px] text-gray-400">{new Date(t.created_at).toLocaleDateString()}</span>
                 )}
-                <div className="flex items-center gap-2 shrink-0">
-                  {editingTournamentId !== t.id && (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setEditingTournamentId(t.id); setEditingTournamentName(t.title); }} 
-                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-gray-600"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                  )}
-                  <div className={`w-2 h-2 rounded-full ${t.status === 'IN_PROGRESS' ? 'bg-green-500' : 'bg-gray-300'}`} />
-                </div>
               </div>
-              <span className="text-[10px] text-gray-400">{new Date(t.created_at).toLocaleDateString()}</span>
             </button>
           ))}
         </div>
