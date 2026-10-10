@@ -167,6 +167,10 @@ export default function AdminPage() {
       return;
     }
 
+    // Save match_type to the tournament in Supabase
+    await supabase.from('tournaments').update({ match_type: matchType }).eq('id', selectedTournamentId);
+    setTournaments(tournaments.map(t => t.id === selectedTournamentId ? { ...t, match_type: matchType } : t));
+
     const currentTournamentMatches = matches.filter(m => m.tournament_id === selectedTournamentId);
     let maxRound = 0;
     if (currentTournamentMatches.length > 0) {
@@ -411,9 +415,9 @@ export default function AdminPage() {
   const selectedTournament = tournaments.find(t => t.id === selectedTournamentId);
   const isIndividualMode = selectedTournament?.match_type === 'INDIVIDUAL';
 
-  const playerStatsMap: Record<string, { matches: number, wins: number, team: 'BLUE' | 'WHITE' | 'MIXED' }> = {};
+  const playerStatsMap: Record<string, { matches: number, wins: number, losses: number, team: 'BLUE' | 'WHITE' | 'MIXED' }> = {};
   dbPlayers.forEach(p => {
-    playerStatsMap[p.name] = { matches: 0, wins: 0, team: 'MIXED' }; // initialize everyone
+    playerStatsMap[p.name] = { matches: 0, wins: 0, losses: 0, team: 'MIXED' };
   });
   
   currentMatches.forEach(m => {
@@ -423,15 +427,20 @@ export default function AdminPage() {
     
     const addStat = (pName: string, isBlue: boolean) => {
       if (!pName) return;
-      if (!playerStatsMap[pName]) playerStatsMap[pName] = { matches: 0, wins: 0, team: isBlue ? 'BLUE' : 'WHITE' };
+      if (!playerStatsMap[pName]) playerStatsMap[pName] = { matches: 0, wins: 0, losses: 0, team: isBlue ? 'BLUE' : 'WHITE' };
       
       playerStatsMap[pName].matches++;
       if (playerStatsMap[pName].team !== (isBlue ? 'BLUE' : 'WHITE')) {
         playerStatsMap[pName].team = 'MIXED';
       }
       
-      if (isBlue && blueWon) playerStatsMap[pName].wins++;
-      if (!isBlue && whiteWon) playerStatsMap[pName].wins++;
+      if (isCompleted) {
+        if ((isBlue && blueWon) || (!isBlue && whiteWon)) {
+          playerStatsMap[pName].wins++;
+        } else if ((isBlue && whiteWon) || (!isBlue && blueWon)) {
+          playerStatsMap[pName].losses++;
+        }
+      }
     };
 
     addStat(m.blue_player1, true);
@@ -444,7 +453,7 @@ export default function AdminPage() {
   
   const blueTeamStats = allStats.filter(s => s.team === 'BLUE').sort((a, b) => b.matches - a.matches || b.wins - a.wins);
   const whiteTeamStats = allStats.filter(s => s.team === 'WHITE').sort((a, b) => b.matches - a.matches || b.wins - a.wins);
-  const individualStats = [...allStats].sort((a, b) => b.wins - a.wins || b.matches - a.matches);
+  const individualStats = [...allStats].sort((a, b) => b.wins - a.wins || a.losses - b.losses || b.matches - a.matches);
 
   const roundNums = Array.from(new Set(currentMatches.map(m => m.round_num))).sort((a, b) => a - b);
 
@@ -776,14 +785,16 @@ export default function AdminPage() {
           </h2>
           
           {isIndividualMode ? (
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {individualStats.map(s => (
-                <div key={s.name} className="bg-gray-50 border border-gray-200 text-gray-800 px-3 py-2 rounded-xl text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 flex flex-col min-w-[100px]">
-                  <span className="font-black text-center mb-1 text-base">{s.name}</span>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>{s.matches}경기</span>
-                    <span className="text-blue-600 font-bold">{s.wins}승</span>
+                <div key={s.name} className="bg-gray-50 border border-gray-200 text-gray-800 p-3 rounded-2xl text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 flex flex-col items-center justify-between shadow-sm hover:border-yellow-400 transition-colors">
+                  <span className="font-black text-base mb-1">{s.name}</span>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="text-blue-600 font-black">{s.wins}승</span>
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
+                    <span className="text-red-500 font-black">{s.losses}패</span>
                   </div>
+                  <span className="text-[10px] text-gray-400 font-bold mt-1">총 {s.matches}경기</span>
                 </div>
               ))}
             </div>

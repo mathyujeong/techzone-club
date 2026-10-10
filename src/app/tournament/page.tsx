@@ -82,10 +82,10 @@ export default function TournamentPage() {
 
   // 선수별 통계
   const isIndividualMode = activeTournament?.match_type === 'INDIVIDUAL';
-  const playerStatsMap: Record<string, { matches: number, wins: number, team: 'BLUE' | 'WHITE' | 'MIXED' }> = {};
+  const playerStatsMap: Record<string, { matches: number, wins: number, losses: number, team: 'BLUE' | 'WHITE' | 'MIXED' }> = {};
   
   dbPlayers.forEach(p => {
-    playerStatsMap[p.name] = { matches: 0, wins: 0, team: 'MIXED' };
+    playerStatsMap[p.name] = { matches: 0, wins: 0, losses: 0, team: 'MIXED' };
   });
 
   matches.forEach(m => {
@@ -95,15 +95,20 @@ export default function TournamentPage() {
     
     const addStat = (pName: string, isBlue: boolean) => {
       if (!pName) return;
-      if (!playerStatsMap[pName]) playerStatsMap[pName] = { matches: 0, wins: 0, team: isBlue ? 'BLUE' : 'WHITE' };
+      if (!playerStatsMap[pName]) playerStatsMap[pName] = { matches: 0, wins: 0, losses: 0, team: isBlue ? 'BLUE' : 'WHITE' };
       
       playerStatsMap[pName].matches++;
       if (playerStatsMap[pName].team !== (isBlue ? 'BLUE' : 'WHITE')) {
         playerStatsMap[pName].team = 'MIXED';
       }
       
-      if (isBlue && blueWon) playerStatsMap[pName].wins++;
-      if (!isBlue && whiteWon) playerStatsMap[pName].wins++;
+      if (isCompleted) {
+        if ((isBlue && blueWon) || (!isBlue && whiteWon)) {
+          playerStatsMap[pName].wins++;
+        } else if ((isBlue && whiteWon) || (!isBlue && blueWon)) {
+          playerStatsMap[pName].losses++;
+        }
+      }
     };
 
     addStat(String(m.blue_player1), true);
@@ -162,21 +167,32 @@ export default function TournamentPage() {
         </div>
         
         {/* 상단 스코어 보드 */}
-        <div className="flex justify-center items-center gap-4 md:gap-12 mb-6 max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-xl border-4 border-gray-50 dark:border-gray-800">
-          <div className="flex-1 text-center">
-            <h2 className="text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400 mb-2">청팀</h2>
-            <div className="text-6xl md:text-8xl font-black text-blue-600 dark:text-blue-400 tracking-tighter">{totalBlueWins}</div>
+        {!isIndividualMode ? (
+          <>
+            <div className="flex justify-center items-center gap-4 md:gap-12 mb-6 max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-xl border-4 border-gray-50 dark:border-gray-800">
+              <div className="flex-1 text-center">
+                <h2 className="text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400 mb-2">청팀</h2>
+                <div className="text-6xl md:text-8xl font-black text-blue-600 dark:text-blue-400 tracking-tighter">{totalBlueWins}</div>
+              </div>
+              
+              <div className="text-gray-300 dark:text-gray-700 font-black text-3xl md:text-5xl italic px-4">VS</div>
+              
+              <div className="flex-1 text-center">
+                <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">백팀</h2>
+                <div className="text-6xl md:text-8xl font-black text-gray-800 dark:text-gray-200 tracking-tighter">{totalWhiteWins}</div>
+              </div>
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 font-bold text-sm tracking-widest uppercase">Live Scoreboard</p>
+          </>
+        ) : (
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-xl border-4 border-gray-50 dark:border-gray-800 max-w-md mx-auto mb-6 flex flex-col items-center">
+            <span className="text-xs font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-widest mb-1">Individual Matches</span>
+            <h2 className="text-xl font-black text-gray-900 dark:text-gray-100">🏆 개인전 실시간 진행 현황</h2>
+            <div className="mt-3 flex items-center gap-3 text-sm font-bold text-gray-600 dark:text-gray-300">
+              <span>완료된 경기: <strong className="text-blue-600 font-black text-base">{matches.filter(m => m.status === 'completed').length}</strong> / {matches.length}</span>
+            </div>
           </div>
-          
-          <div className="text-gray-300 dark:text-gray-700 font-black text-3xl md:text-5xl italic px-4">VS</div>
-          
-          <div className="flex-1 text-center">
-            <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">백팀</h2>
-            <div className="text-6xl md:text-8xl font-black text-gray-800 dark:text-gray-200 tracking-tighter">{totalWhiteWins}</div>
-          </div>
-        </div>
-        
-        <p className="text-gray-500 dark:text-gray-400 font-bold text-sm tracking-widest uppercase">Live Scoreboard</p>
+        )}
       </div>
 
       <div className="flex flex-col xl:flex-row-reverse gap-8 items-start">
@@ -191,11 +207,13 @@ export default function TournamentPage() {
               {individualStats.map(s => {
                 const isSelected = selectedPlayer === s.name;
                 return (
-                  <div key={s.name} onClick={() => setSelectedPlayer(isSelected ? null : s.name)} className={`flex justify-between items-center text-sm cursor-pointer p-2 -mx-2 rounded-lg transition-all ${isSelected ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-1 ring-yellow-400' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                    <span className={`font-bold ${isSelected ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-800 dark:text-gray-200'}`}>{s.name}</span>
-                    <div className="flex gap-2 text-xs">
-                      <span className="text-gray-500">{s.matches}경기</span>
-                      <span className="text-blue-600 font-black">{s.wins}승</span>
+                  <div key={s.name} onClick={() => setSelectedPlayer(isSelected ? null : s.name)} className={`flex justify-between items-center text-sm cursor-pointer p-2.5 rounded-xl transition-all ${isSelected ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-500 shadow-sm' : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
+                    <span className={`font-bold text-base ${isSelected ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-800 dark:text-gray-200'}`}>{s.name}</span>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-blue-600 font-black text-sm">{s.wins}승</span>
+                      <span className="text-gray-300 dark:text-gray-600">•</span>
+                      <span className="text-red-500 font-black text-sm">{s.losses}패</span>
+                      <span className="text-gray-400 text-[10px] ml-1">({s.matches}경기)</span>
                     </div>
                   </div>
                 );
