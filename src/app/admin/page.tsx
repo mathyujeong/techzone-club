@@ -9,9 +9,32 @@ import { Player } from '@/lib/types';
 import { Save, X, Lock, Edit2, UserPlus, CheckSquare, Square, Users as UsersIcon } from 'lucide-react';
 import { Settings, Plus, Minus, Check, Play, Pause, RefreshCw, Trophy, Users, Trash2, ChevronDown } from "lucide-react";
 
+// 관리자 계정 이메일 (Supabase Auth). 비밀번호는 코드에 두지 않고 Supabase에서만 검증합니다.
+const ADMIN_EMAIL = 'admin@techzone.club';
+
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pwd, setPwd] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user?.email === ADMIN_EMAIL) setAuthed(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(session?.user?.email === ADMIN_EMAIL);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const login = async () => {
+    if (!pwd || loggingIn) return;
+    setLoggingIn(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pwd });
+    setLoggingIn(false);
+    if (error) alert('비밀번호가 틀렸습니다!');
+    setPwd("");
+  };
   const [matches, setMatches] = useState<any[]>([]);
   const [editPlayerModal, setEditPlayerModal] = useState<{ id: string, team: 'blue' | 'white', currentP1: string, currentP2: string } | null>(null);
   const [p1Select, setP1Select] = useState("");
@@ -391,13 +414,14 @@ export default function AdminPage() {
             onChange={e => setPwd(e.target.value)} 
             className="w-full border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl mb-4 text-center font-bold tracking-widest outline-none focus:ring-2 focus:ring-yellow-500 text-black dark:text-white"
             placeholder="비밀번호 입력"
-            onKeyDown={e => { if(e.key === 'Enter' && pwd === '0070') setAuthed(true); }}
+            onKeyDown={e => { if(e.key === 'Enter') login(); }}
           />
           <button 
-            onClick={() => { if(pwd === '0070') setAuthed(true); else alert('비밀번호가 틀렸습니다!'); }}
-            className="w-full bg-black dark:bg-yellow-600 text-white font-bold px-6 py-4 rounded-xl hover:opacity-80 transition"
+            onClick={login}
+            disabled={loggingIn}
+            className="w-full bg-black dark:bg-yellow-600 text-white font-bold px-6 py-4 rounded-xl hover:opacity-80 transition disabled:opacity-50"
           >
-            입장하기
+            {loggingIn ? '확인 중...' : '입장하기'}
           </button>
         </div>
       </div>

@@ -1,4 +1,0 @@
-여기에 URL을 붙여넣으세요: https://ivpxdmmsdulidcjrkcjh.supabase.co
-
-
-여기에 Publishable Key (ANON_KEY)를 붙여넣으세요: sb_publishable_AIrRcoIfhXmB5OgKY2FZFg_AQ9WuZGC
