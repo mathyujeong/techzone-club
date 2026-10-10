@@ -50,6 +50,19 @@ export default function AdminPage() {
 
 
   
+  const handleAddNewTournament = async () => {
+    const { data, error } = await supabase.from('tournaments').insert({ title: '새 월례회' }).select().single();
+    if (data) {
+      setTournaments([data, ...tournaments]);
+      setSelectedTournamentId(data.id);
+      setEditingTournamentId(data.id);
+      setEditingTournamentName(data.title);
+      setEditingTournamentDate(new Date(data.created_at).toISOString().split('T')[0]);
+    } else {
+      alert('대회 추가 실패: ' + (error?.message || ''));
+    }
+  };
+
   // --- Tournament Renaming ---
   const saveTournamentData = async (id: string) => {
     if(!editingTournamentName.trim() || !editingTournamentDate) return;
@@ -365,7 +378,7 @@ export default function AdminPage() {
             <Settings className="text-gray-400" />
             관리자 메뉴
           </h1>
-          <button onClick={() => { setGeneratedBracket([]); setIsGeneratorModalOpen(true); }} className="w-full bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 hover:bg-blue-700 shadow-sm transition-colors">
+          <button onClick={handleAddNewTournament} className="w-full bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 hover:bg-blue-700 shadow-sm transition-colors">
             <RefreshCw className="w-4 h-4" /> 새 대회 추가
           </button>
         </div>
