@@ -111,16 +111,21 @@ export default function AdminPage() {
 
   const saveGuest = async () => {
     if (!guestName.trim()) return;
-    const { data, error } = await supabase.from('players').insert({ name: guestName.trim(), grade: guestGrade, gender: guestGender }).select().single();
-    if (data) {
-      setDbPlayers([...dbPlayers, data].sort((a, b) => a.grade.localeCompare(b.grade)));
-      const newSet = new Set(selectedPlayerIds);
-      newSet.add(data.id);
-      setSelectedPlayerIds(newSet);
-      setIsGuestModalOpen(false);
-    } else {
-      alert('추가 실패: ' + (error?.message || '알 수 없는 오류'));
-    }
+    
+    const fakeGuest = {
+      id: `guest_${Date.now()}`,
+      name: `${guestName.trim()}(게스트)`,
+      grade: guestGrade as any,
+      gender: guestGender,
+      default_penalty: 0,
+      created_at: new Date().toISOString()
+    };
+    
+    setDbPlayers([...dbPlayers, fakeGuest].sort((a, b) => a.grade.localeCompare(b.grade)));
+    const newSet = new Set(selectedPlayerIds);
+    newSet.add(fakeGuest.id);
+    setSelectedPlayerIds(newSet);
+    setIsGuestModalOpen(false);
   };
 
   const updatePlayer = async (id: string, updates: any) => {
@@ -405,6 +410,10 @@ export default function AdminPage() {
   const isIndividualMode = selectedTournament?.match_type === 'INDIVIDUAL';
 
   const playerStatsMap: Record<string, { matches: number, wins: number, team: 'BLUE' | 'WHITE' | 'MIXED' }> = {};
+  dbPlayers.forEach(p => {
+    playerStatsMap[p.name] = { matches: 0, wins: 0, team: 'MIXED' }; // initialize everyone
+  });
+  
   currentMatches.forEach(m => {
     const isCompleted = m.status === 'completed';
     const blueWon = isCompleted && m.blue_score > m.white_score;
