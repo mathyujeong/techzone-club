@@ -341,14 +341,25 @@ export default function TournamentPage() {
                         <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.blue_player2}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.blue_player2))}</span>}</div>
                         
                         {match.status === 'completed' && match.blue_score > match.white_score && (
-                          <div className="absolute -top-3 -right-3">
-                            <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md border-2 border-white dark:border-gray-900">WIN</span>
+                          <div className="absolute -top-3 -right-3 flex items-center gap-1">
+                            <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md border-2 border-white dark:border-gray-900 flex items-center gap-1">
+                              <span>WIN</span>
+                              {activeTournament?.display_mode === 'SCORE' && <span className="bg-white/20 px-1 rounded">{match.blue_score}</span>}
+                            </span>
                           </div>
                         )}
                       </div>
                       
-                      <div className="text-gray-300 flex-shrink-0 flex flex-col justify-center">
-                        <span className="text-gray-300 dark:text-gray-600 font-black italic text-base">VS</span>
+                      <div className="text-gray-300 flex-shrink-0 flex flex-col justify-center items-center min-w-[32px]">
+                        {match.status === 'completed' && activeTournament?.display_mode === 'SCORE' ? (
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs font-black text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded-lg">
+                              {match.blue_score} : {match.white_score}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-300 dark:text-gray-600 font-black italic text-base">VS</span>
+                        )}
                       </div>
                       
                       <div className={`flex-1 text-center py-5 px-2 rounded-xl border-2 transition-all relative ${
@@ -363,8 +374,11 @@ export default function TournamentPage() {
                         <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.white_player2}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.white_player2))}</span>}</div>
                         
                         {match.status === 'completed' && match.white_score > match.blue_score && (
-                          <div className="absolute -top-3 -right-3">
-                            <span className="bg-gray-800 dark:bg-gray-200 text-white dark:text-black text-[10px] font-black px-2 py-1 rounded-full shadow-md border-2 border-white dark:border-gray-900">WIN</span>
+                          <div className="absolute -top-3 -right-3 flex items-center gap-1">
+                            <span className="bg-gray-800 dark:bg-gray-200 text-white dark:text-black text-[10px] font-black px-2 py-1 rounded-full shadow-md border-2 border-white dark:border-gray-900 flex items-center gap-1">
+                              <span>WIN</span>
+                              {activeTournament?.display_mode === 'SCORE' && <span className="bg-white/20 dark:bg-black/20 px-1 rounded">{match.white_score}</span>}
+                            </span>
                           </div>
                         )}
                       </div>

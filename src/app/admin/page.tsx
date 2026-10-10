@@ -42,6 +42,7 @@ export default function AdminPage() {
   const [p2Select, setP2Select] = useState("");
   const [p2Input, setP2Input] = useState("");
   const [editMatchModal, setEditMatchModal] = useState<{ id: string, round: number, court: number, type: string, bluePen: number, whitePen: number } | null>(null);
+  const [editScoreModal, setEditScoreModal] = useState<{ id: string, blueScore: number, whiteScore: number, blueText: string, whiteText: string } | null>(null);
 
   // --- New Bracket Generator State ---
   const [isGeneratorModalOpen, setIsGeneratorModalOpen] = useState(false);
@@ -287,6 +288,20 @@ export default function AdminPage() {
       white_score: whiteScore, 
       status: 'completed' 
     }).eq('id', id);
+  }
+
+  async function saveMatchScores(id: string, blueScore: number, whiteScore: number) {
+    const status = (blueScore > 0 || whiteScore > 0) ? 'completed' : 'pending';
+    setMatches(matches.map(m => m.id === id ? { ...m, blue_score: blueScore, white_score: whiteScore, status } : m));
+    await supabase.from('matches').update({ blue_score: blueScore, white_score: whiteScore, status }).eq('id', id);
+    setEditScoreModal(null);
+  }
+
+  async function quickSet25Score(id: string, team: 'blue' | 'white', currentOtherScore: number = 0) {
+    const defaultLossScore = currentOtherScore > 0 && currentOtherScore < 25 ? currentOtherScore : 20;
+    const blueScore = team === 'blue' ? 25 : defaultLossScore;
+    const whiteScore = team === 'white' ? 25 : defaultLossScore;
+    await saveMatchScores(id, blueScore, whiteScore);
   }
 
   function editPlayers(id: string, team: 'blue' | 'white', p1: string, p2: string) {
@@ -985,14 +1000,25 @@ export default function AdminPage() {
                         {bluePen && bluePen !== '0' && <div className="text-[10px] font-bold text-red-500 mt-0.5">패널티 {bluePen}</div>}
                       </div>
                       <button 
-                        onClick={() => setWinner(m.id, 'blue')} 
-                        className={`w-10 h-10 flex justify-center items-center rounded-full border shrink-0 shadow-sm transition-all ${
+                        onClick={() => {
+                          if (activeTournament?.display_mode === 'SCORE') {
+                            setEditScoreModal({ id: m.id, blueScore: m.blue_score || 25, whiteScore: m.white_score || 20, blueText: `${m.blue_player1}, ${m.blue_player2}`, whiteText: `${m.white_player1}, ${m.white_player2}` });
+                          } else {
+                            setWinner(m.id, 'blue');
+                          }
+                        }} 
+                        className={`w-12 h-10 flex flex-col justify-center items-center rounded-xl border shrink-0 shadow-sm transition-all ${
                           m.status === 'completed' && m.blue_score > m.white_score 
                             ? 'bg-blue-600 border-blue-600 text-white' 
-                            : 'bg-white border-blue-200 text-blue-500 hover:bg-blue-50 dark:bg-gray-800'
+                            : 'bg-white border-blue-200 text-blue-600 hover:bg-blue-50 dark:bg-gray-800'
                         }`}
+                        title={activeTournament?.display_mode === 'SCORE' ? '점수 수정' : '청팀 승리 지정'}
                       >
-                        <span className="text-xs sm:text-sm font-black leading-none">{m.status === 'completed' && m.blue_score > m.white_score ? 'WIN' : '승'}</span>
+                        {activeTournament?.display_mode === 'SCORE' ? (
+                          <span className="text-sm font-black tracking-tight">{m.status === 'completed' ? m.blue_score : '점수'}</span>
+                        ) : (
+                          <span className="text-xs sm:text-sm font-black leading-none">{m.status === 'completed' && m.blue_score > m.white_score ? 'WIN' : '승'}</span>
+                        )}
                       </button>
                     </div>
 
@@ -1013,14 +1039,25 @@ export default function AdminPage() {
                         {whitePen && whitePen !== '0' && <div className="text-[10px] font-bold text-red-500 mt-0.5">패널티 {whitePen}</div>}
                       </div>
                       <button 
-                        onClick={() => setWinner(m.id, 'white')} 
-                        className={`w-10 h-10 flex justify-center items-center rounded-full border shrink-0 shadow-sm transition-all ${
+                        onClick={() => {
+                          if (activeTournament?.display_mode === 'SCORE') {
+                            setEditScoreModal({ id: m.id, blueScore: m.blue_score || 20, whiteScore: m.white_score || 25, blueText: `${m.blue_player1}, ${m.blue_player2}`, whiteText: `${m.white_player1}, ${m.white_player2}` });
+                          } else {
+                            setWinner(m.id, 'white');
+                          }
+                        }} 
+                        className={`w-12 h-10 flex flex-col justify-center items-center rounded-xl border shrink-0 shadow-sm transition-all ${
                           m.status === 'completed' && m.white_score > m.blue_score 
-                            ? 'bg-gray-700 border-gray-700 text-white dark:bg-gray-200 dark:text-black' 
-                            : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400'
+                            ? 'bg-gray-800 border-gray-800 text-white dark:bg-gray-200 dark:text-black' 
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300'
                         }`}
+                        title={activeTournament?.display_mode === 'SCORE' ? '점수 수정' : '백팀 승리 지정'}
                       >
-                        <span className="text-xs sm:text-sm font-black leading-none">{m.status === 'completed' && m.white_score > m.blue_score ? 'WIN' : '승'}</span>
+                        {activeTournament?.display_mode === 'SCORE' ? (
+                          <span className="text-sm font-black tracking-tight">{m.status === 'completed' ? m.white_score : '점수'}</span>
+                        ) : (
+                          <span className="text-xs sm:text-sm font-black leading-none">{m.status === 'completed' && m.white_score > m.blue_score ? 'WIN' : '승'}</span>
+                        )}
                       </button>
                     </div>
 
@@ -1106,26 +1143,36 @@ export default function AdminPage() {
                       className="w-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm outline-none cursor-pointer"
                     >
                       <option value="WIN_LOSS">승/패 단순 기록</option>
-                      <option value="SCORE">점수 직접 입력 (21점 등)</option>
+                      <option value="SCORE">점수 직접 입력 (동호인 25점 기준)</option>
                     </select>
                   </div>
 
                   {/* 4. 코트 수 */}
                   <div className="flex flex-col gap-1 col-span-1">
                     <label className="text-xs text-gray-500 font-bold">코트 수</label>
-                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-xl h-[42px]">
-                      <input type="number" min="1" max="10" value={numCourts} onChange={e => setNumCourts(parseInt(e.target.value) || 1)} className="w-full bg-transparent font-black outline-none text-base text-center" />
-                      <span className="text-xs text-gray-400 font-bold shrink-0">면</span>
-                    </div>
+                    <select 
+                      value={numCourts} 
+                      onChange={e => setNumCourts(parseInt(e.target.value) || 1)}
+                      className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm outline-none cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                        <option key={n} value={n}>{n}코트 ({n}면)</option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* 5. 총 라운드 */}
                   <div className="flex flex-col gap-1 col-span-1">
                     <label className="text-xs text-gray-500 font-bold">총 라운드</label>
-                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-xl h-[42px]">
-                      <input type="number" min="1" max="20" value={numRounds} onChange={e => setNumRounds(parseInt(e.target.value) || 1)} className="w-full bg-transparent font-black outline-none text-base text-center" />
-                      <span className="text-xs text-gray-400 font-bold shrink-0">R</span>
-                    </div>
+                    <select 
+                      value={numRounds} 
+                      onChange={e => setNumRounds(parseInt(e.target.value) || 1)}
+                      className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm outline-none cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20].map(r => (
+                        <option key={r} value={r}>{r}라운드 ({r}R)</option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* 5. 급수 무관 매칭 */}
@@ -1405,6 +1452,122 @@ export default function AdminPage() {
         </div>
       )}
 
+
+      {/* --- 점수 직접 입력 모달 (25점 동호인 기준) --- */}
+      {editScoreModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md p-6 shadow-2xl border border-gray-200 dark:border-gray-800">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+              <h2 className="text-lg font-black flex items-center gap-2 text-gray-900 dark:text-white">
+                🏆 경기 점수 입력 (25점 기준)
+              </h2>
+              <button onClick={() => setEditScoreModal(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 빠른 25점 선택 퀵버튼 */}
+            <div className="mb-6 flex flex-col gap-2">
+              <span className="text-xs font-bold text-gray-500">⚡ 원클릭 25점 승리</span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setEditScoreModal({ ...editScoreModal, blueScore: 25, whiteScore: editScoreModal.whiteScore === 25 ? 20 : editScoreModal.whiteScore });
+                  }}
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 py-2.5 px-3 rounded-xl font-black text-xs flex justify-between items-center transition"
+                >
+                  <span>청팀 25점 승</span>
+                  <span className="bg-blue-600 text-white px-2 py-0.5 rounded-md">25점</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setEditScoreModal({ ...editScoreModal, whiteScore: 25, blueScore: editScoreModal.blueScore === 25 ? 20 : editScoreModal.blueScore });
+                  }}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 py-2.5 px-3 rounded-xl font-black text-xs flex justify-between items-center transition dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700"
+                >
+                  <span>백팀 25점 승</span>
+                  <span className="bg-gray-800 text-white px-2 py-0.5 rounded-md dark:bg-gray-200 dark:text-black">25점</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 점수 조작 영역 */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {/* 청팀 */}
+              <div className="bg-blue-50/70 dark:bg-blue-950/40 p-4 rounded-2xl border border-blue-200 dark:border-blue-800 flex flex-col items-center">
+                <span className="text-xs font-black text-blue-600 dark:text-blue-400 mb-1 truncate max-w-full">{editScoreModal.blueText}</span>
+                <span className="text-xs text-gray-400 font-bold mb-3">청팀 점수</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <button
+                    onClick={() => setEditScoreModal({ ...editScoreModal, blueScore: Math.max(0, editScoreModal.blueScore - 1) })}
+                    className="w-9 h-9 rounded-xl bg-white dark:bg-gray-800 shadow border font-black text-lg hover:bg-gray-100"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    value={editScoreModal.blueScore}
+                    onChange={(e) => setEditScoreModal({ ...editScoreModal, blueScore: parseInt(e.target.value) || 0 })}
+                    className="w-16 h-12 bg-white dark:bg-gray-800 border-2 border-blue-500 rounded-xl text-center text-xl font-black outline-none"
+                  />
+                  <button
+                    onClick={() => setEditScoreModal({ ...editScoreModal, blueScore: editScoreModal.blueScore + 1 })}
+                    className="w-9 h-9 rounded-xl bg-white dark:bg-gray-800 shadow border font-black text-lg hover:bg-gray-100"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* 백팀 */}
+              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col items-center">
+                <span className="text-xs font-black text-gray-700 dark:text-gray-300 mb-1 truncate max-w-full">{editScoreModal.whiteText}</span>
+                <span className="text-xs text-gray-400 font-bold mb-3">백팀 점수</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <button
+                    onClick={() => setEditScoreModal({ ...editScoreModal, whiteScore: Math.max(0, editScoreModal.whiteScore - 1) })}
+                    className="w-9 h-9 rounded-xl bg-white dark:bg-gray-800 shadow border font-black text-lg hover:bg-gray-100"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    value={editScoreModal.whiteScore}
+                    onChange={(e) => setEditScoreModal({ ...editScoreModal, whiteScore: parseInt(e.target.value) || 0 })}
+                    className="w-16 h-12 bg-white dark:bg-gray-800 border-2 border-gray-500 rounded-xl text-center text-xl font-black outline-none"
+                  />
+                  <button
+                    onClick={() => setEditScoreModal({ ...editScoreModal, whiteScore: editScoreModal.whiteScore + 1 })}
+                    className="w-9 h-9 rounded-xl bg-white dark:bg-gray-800 shadow border font-black text-lg hover:bg-gray-100"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 하단 버튼 */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditScoreModal(null)}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl text-sm"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => saveMatchScores(editScoreModal.id, editScoreModal.blueScore, editScoreModal.whiteScore)}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-sm shadow-md"
+              >
+                점수 저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- 게스트 추가 모달 --- */}
       {isGuestModalOpen && (
