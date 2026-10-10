@@ -28,6 +28,18 @@ export default function AdminPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [tournaments, setTournaments] = useState<any[]>([]);
 
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+
+  // set selected tournament when tournaments load
+  useEffect(() => {
+    if (tournaments.length > 0 && !selectedTournamentId) {
+      // Find IN_PROGRESS first, otherwise first in list
+      const active = tournaments.find(t => t.status === 'IN_PROGRESS') || tournaments[0];
+      setSelectedTournamentId(active.id);
+    }
+  }, [tournaments]);
+
+
   async function fetchPlayersAndTournaments() {
     const { data: tData } = await supabase.from('tournaments').select('*').order('created_at', { ascending: false });
     if (tData) setTournaments(tData);
@@ -268,17 +280,6 @@ export default function AdminPage() {
 
 
   
-  const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
-
-  // set selected tournament when tournaments load
-  useEffect(() => {
-    if (tournaments.length > 0 && !selectedTournamentId) {
-      // Find IN_PROGRESS first, otherwise first in list
-      const active = tournaments.find(t => t.status === 'IN_PROGRESS') || tournaments[0];
-      setSelectedTournamentId(active.id);
-    }
-  }, [tournaments]);
-
   const endTournament = async () => {
     if(!selectedTournamentId) return;
     if(confirm('정말로 이 대회를 최종 종료하시겠습니까? 종료 후에는 기록 보관소로 이동합니다.')) {
