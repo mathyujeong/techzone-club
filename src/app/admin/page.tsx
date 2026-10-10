@@ -56,6 +56,7 @@ export default function AdminPage() {
   const [ignoreGrade, setIgnoreGrade] = useState(false);
   const [matchType, setMatchType] = useState<'TEAM' | 'INDIVIDUAL'>('TEAM');
   const [genderPref, setGenderPref] = useState<'SAME_GENDER' | 'MIXED'>('SAME_GENDER');
+  const [recordMode, setRecordMode] = useState<'WIN_LOSS' | 'SCORE'>('WIN_LOSS');
 
   const [tournaments, setTournaments] = useState<any[]>([]);
 
@@ -191,15 +192,21 @@ export default function AdminPage() {
     setTournaments(tournaments.map(t => t.id === selectedTournamentId ? { ...t, match_type: newType } : t));
   };
 
+  const toggleDisplayMode = async (newMode: 'WIN_LOSS' | 'SCORE') => {
+    if (!selectedTournamentId) return;
+    await supabase.from('tournaments').update({ display_mode: newMode }).eq('id', selectedTournamentId);
+    setTournaments(tournaments.map(t => t.id === selectedTournamentId ? { ...t, display_mode: newMode } : t));
+  };
+
   const saveTournament = async () => {
     if (!selectedTournamentId) {
       alert("선택된 대회가 없습니다. 왼쪽 메뉴에서 대회를 먼저 선택하거나 '새 대회 추가'를 눌러주세요.");
       return;
     }
 
-    // Save match_type to the tournament in Supabase
-    await supabase.from('tournaments').update({ match_type: matchType }).eq('id', selectedTournamentId);
-    setTournaments(tournaments.map(t => t.id === selectedTournamentId ? { ...t, match_type: matchType } : t));
+    // Save match_type and display_mode to the tournament in Supabase
+    await supabase.from('tournaments').update({ match_type: matchType, display_mode: recordMode }).eq('id', selectedTournamentId);
+    setTournaments(tournaments.map(t => t.id === selectedTournamentId ? { ...t, match_type: matchType, display_mode: recordMode } : t));
 
     const currentTournamentMatches = matches.filter(m => m.tournament_id === selectedTournamentId);
     let maxRound = 0;
@@ -813,19 +820,36 @@ export default function AdminPage() {
               {isIndividualMode ? '개인별 배정 경기 수 및 승률 (성적순)' : '팀 구성 및 선수별 배정 경기 수'}
             </h2>
             
-            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl text-xs font-bold self-end sm:self-auto shadow-inner">
-              <button 
-                onClick={() => toggleMatchType('TEAM')} 
-                className={`px-3 py-1.5 rounded-lg transition-all ${!isIndividualMode ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                청백전 (팀전)
-              </button>
-              <button 
-                onClick={() => toggleMatchType('INDIVIDUAL')} 
-                className={`px-3 py-1.5 rounded-lg transition-all ${isIndividualMode ? 'bg-white dark:bg-gray-700 text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                개인전 (랜덤 매치)
-              </button>
+            <div className="flex flex-wrap gap-2 self-end sm:self-auto">
+              <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl text-xs font-bold shadow-inner">
+                <button 
+                  onClick={() => toggleMatchType('TEAM')} 
+                  className={`px-3 py-1.5 rounded-lg transition-all ${!isIndividualMode ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  청백전 (팀전)
+                </button>
+                <button 
+                  onClick={() => toggleMatchType('INDIVIDUAL')} 
+                  className={`px-3 py-1.5 rounded-lg transition-all ${isIndividualMode ? 'bg-white dark:bg-gray-700 text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  개인전 (랜덤)
+                </button>
+              </div>
+
+              <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl text-xs font-bold shadow-inner">
+                <button 
+                  onClick={() => toggleDisplayMode('WIN_LOSS')} 
+                  className={`px-3 py-1.5 rounded-lg transition-all ${activeTournament?.display_mode !== 'SCORE' ? 'bg-white dark:bg-gray-700 text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  승패 모드
+                </button>
+                <button 
+                  onClick={() => toggleDisplayMode('SCORE')} 
+                  className={`px-3 py-1.5 rounded-lg transition-all ${activeTournament?.display_mode === 'SCORE' ? 'bg-white dark:bg-gray-700 text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  점수 모드
+                </button>
+              </div>
             </div>
           </div>
           
@@ -1073,7 +1097,20 @@ export default function AdminPage() {
                     </select>
                   </div>
 
-                  {/* 3. 코트 수 */}
+                  {/* 3. 기록 방식 */}
+                  <div className="flex flex-col gap-1 col-span-1">
+                    <label className="text-xs text-gray-500 font-bold">기록 방식</label>
+                    <select 
+                      value={recordMode} 
+                      onChange={e => setRecordMode(e.target.value as 'WIN_LOSS' | 'SCORE')}
+                      className="w-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm outline-none cursor-pointer"
+                    >
+                      <option value="WIN_LOSS">승/패 단순 기록</option>
+                      <option value="SCORE">점수 직접 입력 (21점 등)</option>
+                    </select>
+                  </div>
+
+                  {/* 4. 코트 수 */}
                   <div className="flex flex-col gap-1 col-span-1">
                     <label className="text-xs text-gray-500 font-bold">코트 수</label>
                     <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-xl h-[42px]">
@@ -1082,7 +1119,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* 4. 총 라운드 */}
+                  {/* 5. 총 라운드 */}
                   <div className="flex flex-col gap-1 col-span-1">
                     <label className="text-xs text-gray-500 font-bold">총 라운드</label>
                     <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-xl h-[42px]">

@@ -71,63 +71,74 @@ export const buildStrictCourtMatches = (
     return [ [twoM[0], twoF[0]], [twoM[1], twoF[1]] ];
   };
 
-  if (sameGenderFirst) {
-    // 1. Form Pure MD Matches (4 Males with lowest play counts)
-    while (males.length >= 4 && matches.length < numCourts) {
-      const four = males.splice(0, 4);
-      const [team1, team2] = pairFourSameGender(four);
-      matches.push({ blue_team: team1, white_team: team2, match_type: 'MD' });
-    }
+  // STAGE 2: 이번 라운드의 코트 구성(남복 a개, 여복 b개, 혼복 c개)을 고른다.
+  // 우선순위:
+  //   1) 코트를 최대한 많이 채운다
+  //   2) 출전 횟수 격차가 1을 넘지 않게 한다 (특정 성별/사람만 계속 쉬는 것 방지)
+  //   3) 선호 종목: sameGenderFirst면 남복+여복(혼복 대비)을, 아니면 혼복을 더 많이
+  //   4) 출전 횟수가 적은 사람이 더 많이 뛰도록
+  //   ※ 남복과 여복 사이에는 우선순위가 없다.
+  const M = males.length;
+  const F = females.length;
+  const sumFront = (arr: Player[], n: number) => arr.slice(0, n).reduce((s, p) => s + (playCounts[p.id] || 0), 0);
 
-    // 2. Form Pure WD Matches (4 Females with lowest play counts)
-    while (females.length >= 4 && matches.length < numCourts) {
-      const four = females.splice(0, 4);
-      const [team1, team2] = pairFourSameGender(four);
-      matches.push({ blue_team: team1, white_team: team2, match_type: 'WD' });
-    }
+  type Option = { a: number; b: number; c: number; courts: number; gap: number; pref: number; cost: number; rand: number };
+  let best: Option | null = null;
+  const better = (x: Option, y: Option | null) => {
+    if (!y) return true;
+    if (x.courts !== y.courts) return x.courts > y.courts;
+    if (x.gap !== y.gap) return x.gap < y.gap;
+    if (x.pref !== y.pref) return x.pref > y.pref;
+    if (x.cost !== y.cost) return x.cost < y.cost;
+    return x.rand < y.rand;
+  };
 
-    // 3. Form Pure XD Matches (2 Males + 2 Females with lowest play counts)
-    while (males.length >= 2 && females.length >= 2 && matches.length < numCourts) {
-      const twoM = males.splice(0, 2);
-      const twoF = females.splice(0, 2);
-      const [team1, team2] = pairFourXD(twoM, twoF);
-      matches.push({ blue_team: team1, white_team: team2, match_type: 'XD' });
-    }
-  } else {
-    // MIXED MODE: Priority 1 - XD
-    while (males.length >= 2 && females.length >= 2 && matches.length < numCourts) {
-      const twoM = males.splice(0, 2);
-      const twoF = females.splice(0, 2);
-      const [team1, team2] = pairFourXD(twoM, twoF);
-      matches.push({ blue_team: team1, white_team: team2, match_type: 'XD' });
-    }
-
-    // Fallback MD
-    while (males.length >= 4 && matches.length < numCourts) {
-      const four = males.splice(0, 4);
-      const [team1, team2] = pairFourSameGender(four);
-      matches.push({ blue_team: team1, white_team: team2, match_type: 'MD' });
-    }
-
-    // Fallback WD
-    while (females.length >= 4 && matches.length < numCourts) {
-      const four = females.splice(0, 4);
-      const [team1, team2] = pairFourSameGender(four);
-      matches.push({ blue_team: team1, white_team: team2, match_type: 'WD' });
+  for (let a = 0; 4 * a <= M; a++) {
+    for (let b = 0; 4 * b <= F; b++) {
+      for (let c = 0; 4 * a + 2 * c <= M && 4 * b + 2 * c <= F; c++) {
+        const courts = a + b + c;
+        if (courts > numCourts) break;
+        const nM = 4 * a + 2 * c;
+        const nF = 4 * b + 2 * c;
+        // 이 구성으로 뛰었을 때의 출전 횟수 격차
+        const after = [
+          ...males.map((p, i) => (playCounts[p.id] || 0) + (i < nM ? 1 : 0)),
+          ...females.map((p, i) => (playCounts[p.id] || 0) + (i < nF ? 1 : 0)),
+        ];
+        const gap = after.length ? Math.max(1, Math.max(...after) - Math.min(...after)) : 1;
+        const opt: Option = {
+          a, b, c, courts, gap,
+          pref: sameGenderFirst ? a + b : c,
+          cost: sumFront(males, nM) + sumFront(females, nF),
+          rand: Math.random(),
+        };
+        if (better(opt, best)) best = opt;
+      }
     }
   }
 
-  // Fallback MD/WD if any courts remain empty
-  while (males.length >= 4 && matches.length < numCourts) {
-    const four = males.splice(0, 4);
-    const [team1, team2] = pairFourSameGender(four);
-    matches.push({ blue_team: team1, white_team: team2, match_type: 'MD' });
-  }
+  if (!best) return matches;
 
-  while (females.length >= 4 && matches.length < numCourts) {
-    const four = females.splice(0, 4);
-    const [team1, team2] = pairFourSameGender(four);
-    matches.push({ blue_team: team1, white_team: team2, match_type: 'WD' });
+  // STAGE 3: 출전 횟수가 적은 순서대로 뽑아서 코트에 배치
+  const pickedM = males.splice(0, 4 * best.a + 2 * best.c).sort(() => Math.random() - 0.5);
+  const pickedF = females.splice(0, 4 * best.b + 2 * best.c).sort(() => Math.random() - 0.5);
+
+  const sameGenderMatches: { blue_team: Player[], white_team: Player[], match_type: string }[] = [];
+  for (let i = 0; i < best.a; i++) {
+    const [team1, team2] = pairFourSameGender(pickedM.splice(0, 4));
+    sameGenderMatches.push({ blue_team: team1, white_team: team2, match_type: 'MD' });
+  }
+  for (let i = 0; i < best.b; i++) {
+    const [team1, team2] = pairFourSameGender(pickedF.splice(0, 4));
+    sameGenderMatches.push({ blue_team: team1, white_team: team2, match_type: 'WD' });
+  }
+  // 코트 번호가 항상 남복→여복 순으로 고정되지 않도록 섞어준다
+  sameGenderMatches.sort(() => Math.random() - 0.5);
+  matches.push(...sameGenderMatches);
+
+  for (let i = 0; i < best.c; i++) {
+    const [team1, team2] = pairFourXD(pickedM.splice(0, 2), pickedF.splice(0, 2));
+    matches.push({ blue_team: team1, white_team: team2, match_type: 'XD' });
   }
 
   return matches;

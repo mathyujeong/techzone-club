@@ -11,7 +11,6 @@ export function Navigation() {
   const navItems = [
     { name: "홈", href: "/", icon: Home },
     { name: "실시간 대진표", href: "/tournament", icon: Trophy },
-    { name: "클럽 소개", href: "/about", icon: Users },
   ];
 
   return (

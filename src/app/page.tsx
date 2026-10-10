@@ -35,12 +35,6 @@ export default function Home() {
           대진표 확인하기
           <ArrowRight className="w-5 h-5" />
         </Link>
-        <Link 
-          href="/about" 
-          className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-gray-900 border border-gray-200 rounded-xl font-semibold hover:bg-gray-50 transition-colors dark:bg-gray-900 dark:text-white dark:border-gray-800 dark:hover:bg-gray-800"
-        >
-          클럽 소개
-        </Link>
       </div>
 
       <AddToHomeButton />
