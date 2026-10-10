@@ -143,6 +143,7 @@ export default function AdminPage() {
     if (authed) fetchPlayersAndTournaments();
   }, [authed]);
 
+  const activePlayersForDropdown = dbPlayers.filter(p => selectedPlayerIds.has(p.id)).sort((a,b) => a.name.localeCompare(b.name));
   const handleGenerate = () => {
     setIsGenerating(true);
     setTimeout(() => {
@@ -188,22 +189,32 @@ export default function AdminPage() {
     alert('새 대진표가 성공적으로 적용되었습니다!');
   };
 
-  const handleSwapGenerated = (matchIndex: number, team: 'blue' | 'white', playerIndex: 0 | 1) => {
-    const targetName = prompt('누구와 교체하시겠습니까? (정확한 이름 입력)');
-    if (!targetName) return;
-    
-    const targetPlayer = dbPlayers.find(p => p.name === targetName);
-    if (!targetPlayer) {
-      alert('존재하지 않는 회원입니다.');
-      return;
-    }
+  const handleSwapGenerated = (matchIndex: number, team: 'blue' | 'white', playerIndex: 0 | 1, targetPlayerName: string) => {
+    const targetPlayer = dbPlayers.find(p => p.name === targetPlayerName);
+    if (!targetPlayer) return;
 
     const newBracket = [...generatedBracket];
+    
+    // Check if target player is already in THIS round. If so, do a 2-way swap!
+    const roundNum = newBracket[matchIndex].round_num;
+    const currentOccupant = team === 'blue' ? newBracket[matchIndex].blue_team[playerIndex] : newBracket[matchIndex].white_team[playerIndex];
+    
+    let foundAndSwapped = false;
+    for (let i = 0; i < newBracket.length; i++) {
+      if (newBracket[i].round_num === roundNum) {
+        if (newBracket[i].blue_team[0].name === targetPlayer.name) { newBracket[i].blue_team[0] = currentOccupant; foundAndSwapped = true; break; }
+        if (newBracket[i].blue_team[1].name === targetPlayer.name) { newBracket[i].blue_team[1] = currentOccupant; foundAndSwapped = true; break; }
+        if (newBracket[i].white_team[0].name === targetPlayer.name) { newBracket[i].white_team[0] = currentOccupant; foundAndSwapped = true; break; }
+        if (newBracket[i].white_team[1].name === targetPlayer.name) { newBracket[i].white_team[1] = currentOccupant; foundAndSwapped = true; break; }
+      }
+    }
+
     if (team === 'blue') {
       newBracket[matchIndex].blue_team[playerIndex] = targetPlayer;
     } else {
       newBracket[matchIndex].white_team[playerIndex] = targetPlayer;
     }
+    
     setGeneratedBracket(newBracket);
   };
 
@@ -1122,14 +1133,30 @@ export default function AdminPage() {
                           {/* LEFT TEAM */}
                           <div className="flex-1 flex flex-col gap-1.5 min-w-0">
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded w-max mb-0.5 ${matchType === 'TEAM' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 bg-gray-100 dark:bg-gray-800'}`}>{matchType === 'TEAM' ? '청팀' : 'A조'}</span>
-                            <button onClick={() => handleSwapGenerated(idx, 'blue', 0)} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 hover:text-blue-600 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0">
-                              <span className="truncate">{m.blue_team[0].name}</span>
-                              {<span className="text-[10px] font-black text-gray-400 group-hover:text-blue-400 ml-1 shrink-0">{m.blue_team[0].grade}</span>}
-                            </button>
-                            <button onClick={() => handleSwapGenerated(idx, 'blue', 1)} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 hover:text-blue-600 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0">
-                              <span className="truncate">{m.blue_team[1].name}</span>
-                              {<span className="text-[10px] font-black text-gray-400 group-hover:text-blue-400 ml-1 shrink-0">{m.blue_team[1].grade}</span>}
-                            </button>
+                            <select 
+                              value={m.blue_team[0].name} 
+                              onChange={e => handleSwapGenerated(idx, 'blue', 0, e.target.value)} 
+                              className="appearance-none cursor-pointer flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 hover:text-blue-600 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0 outline-none"
+                            >
+                              <option value={m.blue_team[0].name}>{m.blue_team[0].name} ({m.blue_team[0].grade})</option>
+                              <optgroup label="교체 대상 선택">
+                                {activePlayersForDropdown.filter(p => p.name !== m.blue_team[0].name).map(p => (
+                                  <option key={p.id} value={p.name}>{p.name} ({p.grade})</option>
+                                ))}
+                              </optgroup>
+                            </select>
+                            <select 
+                              value={m.blue_team[1].name} 
+                              onChange={e => handleSwapGenerated(idx, 'blue', 1, e.target.value)} 
+                              className="appearance-none cursor-pointer flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 hover:text-blue-600 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0 outline-none"
+                            >
+                              <option value={m.blue_team[1].name}>{m.blue_team[1].name} ({m.blue_team[1].grade})</option>
+                              <optgroup label="교체 대상 선택">
+                                {activePlayersForDropdown.filter(p => p.name !== m.blue_team[1].name).map(p => (
+                                  <option key={p.id} value={p.name}>{p.name} ({p.grade})</option>
+                                ))}
+                              </optgroup>
+                            </select>
                           </div>
                           
                           {/* VS */}
@@ -1138,14 +1165,30 @@ export default function AdminPage() {
                           {/* RIGHT TEAM */}
                           <div className="flex-1 flex flex-col gap-1.5 min-w-0 items-end">
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded w-max mb-0.5 ${matchType === 'TEAM' ? 'text-gray-600 bg-gray-100 dark:bg-gray-800' : 'text-gray-600 bg-gray-100 dark:bg-gray-800'}`}>{matchType === 'TEAM' ? '백팀' : 'B조'}</span>
-                            <button onClick={() => handleSwapGenerated(idx, 'white', 0)} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 hover:text-gray-800 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0">
-                              <span className="truncate">{m.white_team[0].name}</span>
-                              {<span className="text-[10px] font-black text-gray-400 group-hover:text-gray-500 ml-1 shrink-0">{m.white_team[0].grade}</span>}
-                            </button>
-                            <button onClick={() => handleSwapGenerated(idx, 'white', 1)} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 hover:text-gray-800 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0">
-                              <span className="truncate">{m.white_team[1].name}</span>
-                              {<span className="text-[10px] font-black text-gray-400 group-hover:text-gray-500 ml-1 shrink-0">{m.white_team[1].grade}</span>}
-                            </button>
+                            <select 
+                              value={m.white_team[0].name} 
+                              onChange={e => handleSwapGenerated(idx, 'white', 0, e.target.value)} 
+                              className="appearance-none cursor-pointer flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 hover:text-gray-800 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0 outline-none"
+                            >
+                              <option value={m.white_team[0].name}>{m.white_team[0].name} ({m.white_team[0].grade})</option>
+                              <optgroup label="교체 대상 선택">
+                                {activePlayersForDropdown.filter(p => p.name !== m.white_team[0].name).map(p => (
+                                  <option key={p.id} value={p.name}>{p.name} ({p.grade})</option>
+                                ))}
+                              </optgroup>
+                            </select>
+                            <select 
+                              value={m.white_team[1].name} 
+                              onChange={e => handleSwapGenerated(idx, 'white', 1, e.target.value)} 
+                              className="appearance-none cursor-pointer flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 hover:text-gray-800 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent transition-all group min-w-0 outline-none"
+                            >
+                              <option value={m.white_team[1].name}>{m.white_team[1].name} ({m.white_team[1].grade})</option>
+                              <optgroup label="교체 대상 선택">
+                                {activePlayersForDropdown.filter(p => p.name !== m.white_team[1].name).map(p => (
+                                  <option key={p.id} value={p.name}>{p.name} ({p.grade})</option>
+                                ))}
+                              </optgroup>
+                            </select>
                           </div>
                         </div>
                       </div>
