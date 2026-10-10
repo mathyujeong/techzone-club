@@ -393,11 +393,13 @@ export default function AdminPage() {
   }
 
   async function addMatch() {
+    if (!selectedTournamentId) return;
     const round = parseInt(prompt("몇 라운드에 추가할까요?", "1") || "0");
     if (!round) return;
     const court = parseInt(prompt("코트 번호는요?", "1") || "1");
     
-    await supabase.from('matches').insert({
+    const { error } = await supabase.from('matches').insert({
+      tournament_id: selectedTournamentId,
       round_num: round,
       court_num: court,
       match_type: 'MD:0:0',
@@ -409,7 +411,11 @@ export default function AdminPage() {
       white_score: 0,
       status: 'pending'
     });
-    fetchMatches();
+    if (error) {
+      alert('경기 추가 실패: ' + error.message);
+      return;
+    }
+    await fetchMatches();
   }
 
   const deleteMatch = (id: string) => {
