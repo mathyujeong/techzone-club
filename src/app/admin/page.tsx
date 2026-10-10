@@ -35,6 +35,9 @@ export default function AdminPage() {
   const [tournaments, setTournaments] = useState<any[]>([]);
 
   const [isPlayerManageModalOpen, setIsPlayerManageModalOpen] = useState(false);
+  const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestGrade, setGuestGrade] = useState("E");
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [editingTournamentName, setEditingTournamentName] = useState("");
   const [editingTournamentDate, setEditingTournamentDate] = useState("");
@@ -56,20 +59,21 @@ export default function AdminPage() {
   };
 
   // --- Player Management ---
-  const handleAddGuest = async () => {
-    const name = prompt("게스트/새 회원 이름을 입력하세요:");
-    if (!name) return;
-    const grade = prompt("급수를 입력하세요 (예: A, B, C, D, E, S):", "E");
-    if (!grade) return;
-    
-    const { data, error } = await supabase.from('players').insert({ name, grade }).select().single();
+  const openGuestModal = () => {
+    setGuestName("");
+    setGuestGrade("E");
+    setIsGuestModalOpen(true);
+  };
+
+  const saveGuest = async () => {
+    if (!guestName.trim()) return;
+    const { data, error } = await supabase.from('players').insert({ name: guestName.trim(), grade: guestGrade }).select().single();
     if (data) {
       setDbPlayers([...dbPlayers, data].sort((a, b) => a.grade.localeCompare(b.grade)));
-      // Automatically select the new guest
       const newSet = new Set(selectedPlayerIds);
       newSet.add(data.id);
       setSelectedPlayerIds(newSet);
-      alert(`${name} 님이 추가되었습니다.`);
+      setIsGuestModalOpen(false);
     } else {
       alert('추가 실패: ' + (error?.message || '알 수 없는 오류'));
     }
@@ -830,7 +834,7 @@ export default function AdminPage() {
                   <button onClick={() => setSelectedPlayerIds(new Set())} className="flex-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 px-2 py-1.5 rounded flex items-center justify-center gap-1 font-bold">
                     <Square className="w-3 h-3" /> 전체해제
                   </button>
-                  <button onClick={handleAddGuest} className="flex-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1.5 rounded flex items-center justify-center gap-1 font-bold">
+                  <button onClick={openGuestModal} className="flex-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1.5 rounded flex items-center justify-center gap-1 font-bold">
                     <UserPlus className="w-3 h-3" /> 게스트/추가
                   </button>
                 </div>
@@ -956,7 +960,7 @@ export default function AdminPage() {
             <div className="p-6 flex-1 overflow-y-auto space-y-3 bg-gray-50 dark:bg-gray-950">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold">총 {dbPlayers.length}명</h3>
-                <button onClick={handleAddGuest} className="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 hover:bg-blue-700">
+                <button onClick={openGuestModal} className="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 hover:bg-blue-700">
                   <UserPlus className="w-4 h-4" /> 새 회원 등록
                 </button>
               </div>
@@ -986,6 +990,59 @@ export default function AdminPage() {
         </div>
       )}
 
+
+      {/* --- 게스트 추가 모달 --- */}
+      {isGuestModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-gray-100 dark:border-gray-800">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
+                <UserPlus className="text-blue-600 w-6 h-6" /> 새 게스트 추가
+              </h2>
+              <button onClick={() => setIsGuestModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">이름</label>
+                <input 
+                  type="text" 
+                  value={guestName} 
+                  onChange={(e) => setGuestName(e.target.value)} 
+                  placeholder="홍길동"
+                  autoFocus
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all font-medium"
+                  onKeyDown={(e) => e.key === 'Enter' && saveGuest()}
+                />
+              </div>
+              <div className="relative">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">급수</label>
+                <select 
+                  value={guestGrade} 
+                  onChange={(e) => setGuestGrade(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all font-medium cursor-pointer appearance-none"
+                >
+                  <option value="S">S급</option>
+                  <option value="A">A급</option>
+                  <option value="B">B급</option>
+                  <option value="C">C급</option>
+                  <option value="D">D급</option>
+                  <option value="E">E급 (초심)</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-10 w-5 h-5 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+            <button 
+              onClick={saveGuest}
+              disabled={!guestName.trim()}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-md"
+            >
+              추가하기
+            </button>
+          </div>
+        </div>
+      )}
       </main>
     </div>
   );
