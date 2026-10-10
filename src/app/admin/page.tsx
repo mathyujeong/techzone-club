@@ -63,6 +63,20 @@ export default function AdminPage() {
     }
   };
 
+  const deleteTournament = async (id: string) => {
+    const code = prompt('이 대회와 모든 하위 경기가 삭제됩니다. 삭제하려면 0000 을 입력하세요.');
+    if (code === '0000') {
+      await supabase.from('tournaments').delete().eq('id', id);
+      setTournaments(tournaments.filter(t => t.id !== id));
+      if (selectedTournamentId === id) setSelectedTournamentId(null);
+      setEditingTournamentId(null);
+    } else if (code !== null) {
+      alert('입력한 코드가 틀렸습니다.');
+    }
+  };
+
+
+
   // --- Tournament Renaming ---
   const saveTournamentData = async (id: string) => {
     if(!editingTournamentName.trim() || !editingTournamentDate) return;
@@ -304,9 +318,13 @@ export default function AdminPage() {
   }
 
   async function deleteMatch(id: string) {
-    if (confirm("정말로 이 경기를 삭제하시겠습니까?")) {
+    const code = prompt('이 경기를 완전히 삭제하려면 0000 을 입력하세요.');
+    if (code === '0000') {
       setMatches(matches.filter(m => m.id !== id));
       await supabase.from('matches').delete().eq('id', id);
+      setEditMatchModal(null);
+    } else if (code !== null) {
+      alert('입력한 코드가 틀렸습니다.');
     }
   }
 
@@ -425,6 +443,14 @@ export default function AdminPage() {
                       </button>
                     )}
                     <div className={`w-2 h-2 rounded-full ${t.status === 'IN_PROGRESS' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    {editingTournamentId !== t.id && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); deleteTournament(t.id); }} 
+                        className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
                 {editingTournamentId === t.id ? (
@@ -531,18 +557,26 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setEditMatchModal(null)} 
+                  className="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3.5 rounded-xl font-bold"
+                >
+                  취소
+                </button>
+                <button 
+                  onClick={saveMatchInfo} 
+                  className="flex-1 bg-yellow-500 text-white py-3.5 rounded-xl font-bold"
+                >
+                  저장
+                </button>
+              </div>
               <button 
-                onClick={() => setEditMatchModal(null)} 
-                className="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3.5 rounded-xl font-bold"
+                onClick={() => deleteMatch(editMatchModal.id)} 
+                className="w-full bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl font-bold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-center gap-2"
               >
-                취소
-              </button>
-              <button 
-                onClick={saveMatchInfo} 
-                className="flex-1 bg-yellow-500 text-white py-3.5 rounded-xl font-bold"
-              >
-                저장
+                <Trash2 className="w-4 h-4" /> 이 경기 완전 삭제
               </button>
             </div>
           </div>
