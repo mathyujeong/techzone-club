@@ -6,52 +6,65 @@ import { Trophy, Clock, Swords, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function TournamentPage() {
+  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [activeTournament, setActiveTournament] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
 
-  const [activeTournament, setActiveTournament] = useState<any>(null);
-
-  async function fetchMatches() {
-    // 1. Get the most recently active tournament (or just the latest one)
+  async function fetchAllData() {
     const { data: tData } = await supabase
       .from('tournaments')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .order('created_at', { ascending: false });
       
-    if (tData) {
-      setActiveTournament(tData);
-      
-      // 2. Fetch matches ONLY for this tournament
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*')
-        .eq('tournament_id', tData.id)
-        .order('round_num', { ascending: true })
-        .order('court_num', { ascending: true });
-        
-      if (data) setMatches(data);
+    if (tData && tData.length > 0) {
+      setTournaments(tData);
+      if (!activeTournament) {
+        setActiveTournament(tData[0]);
+        fetchMatches(tData[0].id);
+      }
+    } else {
+      setLoading(false);
     }
+  }
+
+  async function fetchMatches(tournamentId: string) {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('matches')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('round_num', { ascending: true })
+      .order('court_num', { ascending: true });
+      
+    if (data) setMatches(data);
     setLoading(false);
   }
 
-  useEffect(() => {
-    fetchMatches();
+  const handleTournamentChange = (id: string) => {
+    const t = tournaments.find(x => x.id === id);
+    if (t) {
+      setActiveTournament(t);
+      setSelectedPlayer(null); // Reset player filter on tournament change
+      fetchMatches(t.id);
+    }
+  };
 
-    // 실시간 점수 반영 구독
+  useEffect(() => {
+    fetchAllData();
+
     const subscription = supabase
       .channel('matches_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, payload => {
-        fetchMatches(); // 데이터가 변경되면 즉시 다시 불러오기
+        if (activeTournament) fetchMatches(activeTournament.id);
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [activeTournament?.id]);
 
   // 라운드별로 그룹화
   const roundNums = Array.from(new Set(matches.map(m => m.round_num))).sort((a, b) => a - b);
@@ -86,10 +99,31 @@ export default function TournamentPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-12 text-center">
-        <h1 className="text-3xl md:text-4xl font-black flex items-center justify-center gap-3 mb-8">
-          <Trophy className="w-10 h-10 text-yellow-500" />
-          제 1회 월례회 대진표
-        </h1>
+        <div className="flex flex-col items-center justify-center mb-8 space-y-4">
+          <div className="flex items-center justify-center gap-3">
+            <Trophy className="w-10 h-10 text-yellow-500" />
+            <h1 className="text-3xl md:text-4xl font-black">
+              대진표 및 실시간 점수
+            </h1>
+          </div>
+          
+          {tournaments.length > 0 && (
+            <div className="relative inline-block w-full max-w-xs mt-4">
+              <select 
+                value={activeTournament?.id || ''} 
+                onChange={(e) => handleTournamentChange(e.target.value)}
+                className="w-full appearance-none bg-white dark:bg-gray-900 border-2 border-yellow-400 dark:border-yellow-600 rounded-2xl px-6 py-4 outline-none text-gray-900 dark:text-white focus:ring-4 focus:ring-yellow-500/20 transition-all font-bold text-center cursor-pointer shadow-md text-lg"
+              >
+                {tournaments.map(t => (
+                  <option key={t.id} value={t.id}>{t.title}</option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          )}
+        </div>
         
         {/* 상단 스코어 보드 */}
         <div className="flex justify-center items-center gap-4 md:gap-12 mb-6 max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-xl border-4 border-gray-50 dark:border-gray-800">
