@@ -316,7 +316,7 @@ export default function TournamentPage() {
                             ? 'bg-gray-50 border-gray-100 opacity-40 grayscale dark:bg-gray-900/20 dark:border-gray-800' 
                             : 'bg-blue-50/50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/50'
                       }`}>
-                        <div className="text-xs font-black text-blue-600 dark:text-blue-400 mb-2 flex justify-center items-center gap-1">{activeTournament?.match_type === 'INDIVIDUAL' ? 'A조' : '청팀'} {bluePen && bluePen !== '0' && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full">패널티 {bluePen}</span>}</div>
+                        <div className="text-xs font-black text-blue-600 dark:text-blue-400 mb-2 flex justify-center items-center gap-1">{activeTournament?.match_type !== 'INDIVIDUAL' && '청팀'} {bluePen && bluePen !== '0' && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full">패널티 {bluePen}</span>}</div>
                         <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.blue_player1}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.blue_player1))}</span>}</div>
                         <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.blue_player2}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.blue_player2))}</span>}</div>
                         
@@ -338,7 +338,7 @@ export default function TournamentPage() {
                             ? 'bg-gray-50 border-gray-100 opacity-40 grayscale dark:bg-gray-900/20 dark:border-gray-800' 
                             : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                       }`}>
-                        <div className="text-xs font-black text-gray-600 dark:text-gray-400 mb-2 flex justify-center items-center gap-1">{activeTournament?.match_type === 'INDIVIDUAL' ? 'B조' : '백팀'} {whitePen && whitePen !== '0' && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full">패널티 {whitePen}</span>}</div>
+                        <div className="text-xs font-black text-gray-600 dark:text-gray-400 mb-2 flex justify-center items-center gap-1">{activeTournament?.match_type !== 'INDIVIDUAL' && '백팀'} {whitePen && whitePen !== '0' && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full">패널티 {whitePen}</span>}</div>
                         <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.white_player1}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.white_player1))}</span>}</div>
                         <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-relaxed flex items-center gap-2"><span>{match.white_player2}</span> {showGrades && <span className="text-[10px] font-black opacity-50 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{getPlayerGrade(String(match.white_player2))}</span>}</div>
                         

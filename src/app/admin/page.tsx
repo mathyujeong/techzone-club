@@ -153,7 +153,9 @@ export default function AdminPage() {
     setIsGenerating(true);
     setTimeout(() => {
       const activePlayers = dbPlayers.filter(p => selectedPlayerIds.has(p.id));
-      const matches = generateMatches(activePlayers, matchType, numCourts, numRounds, ignoreGrade);
+      const manualBlue = activePlayers.filter(p => teamAssignments[p.id] !== 'WHITE');
+      const manualWhite = activePlayers.filter(p => teamAssignments[p.id] === 'WHITE');
+      const matches = generateMatches(activePlayers, matchType, numCourts, numRounds, ignoreGrade, manualBlue, manualWhite);
       setGeneratedBracket(matches);
       setIsGenerating(false);
     }, 600);
@@ -1038,7 +1040,14 @@ export default function AdminPage() {
                 {/* LEFT: PLAYERS */}
                 <div className="w-full lg:w-1/2 flex flex-col gap-3 h-full max-h-[70vh]">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-gray-800 dark:text-gray-200">참가자 선택</h3>
+                    <div className="flex flex-col gap-1">
+                      <h3 className="font-bold text-gray-800 dark:text-gray-200">참가자 선택</h3>
+                      {selectedPlayerIds.size > 0 && selectedPlayerIds.size < numCourts * 4 && (
+                        <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                          ⚠️ {selectedPlayerIds.size}명 선택됨 (코트당 4명 필요하여 최대 {Math.floor(selectedPlayerIds.size / 4)}개 코트만 배정됩니다)
+                        </span>
+                      )}
+                    </div>
                     <div className="flex gap-2">
                       <span className="text-sm text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-md">{selectedPlayerIds.size}명 선택됨</span>
                     </div>
@@ -1141,7 +1150,7 @@ export default function AdminPage() {
                         <div className="flex items-stretch justify-between gap-2">
                           {/* LEFT TEAM */}
                           <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded w-max mb-0.5 ${matchType === 'TEAM' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 bg-gray-100 dark:bg-gray-800'}`}>{matchType === 'TEAM' ? '청팀' : 'A조'}</span>
+                            {matchType === 'TEAM' && <span className="text-[10px] font-black px-2 py-0.5 rounded w-max mb-0.5 text-blue-600 bg-blue-50">청팀</span>}
                             <select 
                               value={m.blue_team[0].name} 
                               onChange={e => handleSwapGenerated(idx, 'blue', 0, e.target.value)} 
@@ -1173,7 +1182,7 @@ export default function AdminPage() {
                           
                           {/* RIGHT TEAM */}
                           <div className="flex-1 flex flex-col gap-1.5 min-w-0 items-end">
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded w-max mb-0.5 ${matchType === 'TEAM' ? 'text-gray-600 bg-gray-100 dark:bg-gray-800' : 'text-gray-600 bg-gray-100 dark:bg-gray-800'}`}>{matchType === 'TEAM' ? '백팀' : 'B조'}</span>
+                            {matchType === 'TEAM' && <span className="text-[10px] font-black px-2 py-0.5 rounded w-max mb-0.5 text-gray-600 bg-gray-100 dark:bg-gray-800">백팀</span>}
                             <select 
                               value={m.white_team[0].name} 
                               onChange={e => handleSwapGenerated(idx, 'white', 0, e.target.value)} 
