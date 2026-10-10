@@ -32,6 +32,7 @@ export default function AdminPage() {
   const [numRounds, setNumRounds] = useState(5);
   const [ignoreGrade, setIgnoreGrade] = useState(false);
   const [matchType, setMatchType] = useState<'TEAM' | 'INDIVIDUAL'>('TEAM');
+  const [genderPref, setGenderPref] = useState<'SAME_GENDER' | 'MIXED'>('SAME_GENDER');
 
   const [tournaments, setTournaments] = useState<any[]>([]);
 
@@ -155,7 +156,7 @@ export default function AdminPage() {
       const activePlayers = dbPlayers.filter(p => selectedPlayerIds.has(p.id));
       const manualBlue = activePlayers.filter(p => teamAssignments[p.id] !== 'WHITE');
       const manualWhite = activePlayers.filter(p => teamAssignments[p.id] === 'WHITE');
-      const matches = generateMatches(activePlayers, matchType, numCourts, numRounds, ignoreGrade, manualBlue, manualWhite);
+      const matches = generateMatches(activePlayers, matchType, numCourts, numRounds, ignoreGrade, manualBlue, manualWhite, genderPref === 'SAME_GENDER');
       setGeneratedBracket(matches);
       setIsGenerating(false);
     }, 600);
@@ -1029,6 +1030,18 @@ export default function AdminPage() {
                     >
                       <option value="TEAM">청백전 (팀전)</option>
                       <option value="INDIVIDUAL">개인전 (랜덤 매치)</option>
+                    </select>
+                  </div>
+
+                  <div className="w-full sm:w-auto">
+                    <label className="text-xs text-gray-500 font-bold mb-1 block">종목 선호</label>
+                    <select 
+                      value={genderPref} 
+                      onChange={e => setGenderPref(e.target.value as 'SAME_GENDER' | 'MIXED')}
+                      className="w-full sm:w-auto bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-3 py-2 rounded-xl font-bold outline-none cursor-pointer"
+                    >
+                      <option value="SAME_GENDER">남복/여복 우선 (추천)</option>
+                      <option value="MIXED">혼복 포함 (랜덤)</option>
                     </select>
                   </div>
 
