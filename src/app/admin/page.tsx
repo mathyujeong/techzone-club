@@ -820,14 +820,14 @@ export default function AdminPage() {
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto flex flex-col md:flex-row gap-8 bg-gray-50 dark:bg-gray-950">
-              <div className="w-full md:w-1/3 space-y-4">
+              <div className="w-full md:w-1/3 flex flex-col gap-3 h-full max-h-[70vh]">
                 <div className="flex justify-between items-center">
                   <h3 className="font-bold text-gray-800 dark:text-gray-200">참가자 선택</h3>
                   <div className="flex gap-2">
                     <span className="text-sm text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-md">{selectedPlayerIds.size}명 선택됨</span>
                   </div>
                 </div>
-                <div className="flex justify-between gap-1 mt-2">
+                <div className="flex justify-between gap-1 shrink-0">
                   <button onClick={() => setSelectedPlayerIds(new Set(dbPlayers.map(p => p.id)))} className="flex-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 px-2 py-1.5 rounded flex items-center justify-center gap-1 font-bold">
                     <CheckSquare className="w-3 h-3" /> 전체선택
                   </button>
@@ -838,7 +838,7 @@ export default function AdminPage() {
                     <UserPlus className="w-3 h-3" /> 게스트/추가
                   </button>
                 </div>
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 max-h-[50vh] overflow-y-auto space-y-2">
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-3 flex-1 overflow-y-auto space-y-2 min-h-0">
                   {dbPlayers.map(p => (
                     <label key={p.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer">
                       <input 
@@ -857,15 +857,15 @@ export default function AdminPage() {
                     </label>
                   ))}
                 </div>
-                <div className="flex gap-2">
-                  <div className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 flex flex-col justify-center">
+                <div className="flex gap-2 shrink-0">
+                  <div className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-2 flex flex-col justify-center">
                     <label className="text-xs text-gray-500 font-bold mb-1">코트 수</label>
                     <div className="flex items-center gap-2">
                       <input type="number" min="1" max="10" value={numCourts} onChange={e => setNumCourts(parseInt(e.target.value) || 1)} className="w-full bg-transparent font-bold outline-none" />
                       <span className="text-sm text-gray-400">면</span>
                     </div>
                   </div>
-                  <div className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 flex flex-col justify-center">
+                  <div className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-2 flex flex-col justify-center">
                     <label className="text-xs text-gray-500 font-bold mb-1">총 라운드</label>
                     <div className="flex items-center gap-2">
                       <input type="number" min="1" max="20" value={numRounds} onChange={e => setNumRounds(parseInt(e.target.value) || 1)} className="w-full bg-transparent font-bold outline-none" />
@@ -874,7 +874,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-4 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3">
+                <div className="flex flex-col gap-2 shrink-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3">
                   <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
                     <input type="checkbox" checked={ignoreGrade} onChange={e => setIgnoreGrade(e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
                     급수 무관 (랜덤 편성)
@@ -887,7 +887,7 @@ export default function AdminPage() {
                 <button 
                   onClick={handleGenerate}
                   disabled={isGenerating || selectedPlayerIds.size < 4}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-md mt-2"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-md shrink-0"
                 >
                   <RefreshCw className={`w-5 h-5 ${isGenerating ? 'animate-spin' : ''}`} />
                   알고리즘으로 대진표 짜기
