@@ -1,4 +1,6 @@
-import { Player } from './types';
+import re
+
+code = """import { Player } from './types';
 
 // Convert grade to numeric value for balancing
 export const getMatchTypeLabel = (team1: Player[], team2: Player[]) => {
@@ -201,3 +203,7 @@ export const generateMatches = (
 
   return matches;
 };
+"""
+
+with open('src/lib/matchMaker.ts', 'w') as f:
+    f.write(code)
