@@ -1,41 +1,17 @@
-import { Player } from './types';
+import re
 
-// Convert grade to numeric value for balancing
-export const getMatchTypeLabel = (team1: Player[], team2: Player[]) => {
-  const allPlayers = [...team1, ...team2];
-  const mCount = allPlayers.filter(p => p.gender === 'M' || !p.gender).length;
-  const fCount = allPlayers.filter(p => p.gender === 'F').length;
-  
-  if (fCount === 0) return 'MD';
-  if (mCount === 0) return 'WD';
-  return 'XD';
-};
+with open('src/lib/matchMaker.ts', 'r') as f:
+    content = f.read()
 
-export const getGradeValue = (grade: string): number => {
-  const map: Record<string, number> = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1, 'E': 0 };
-  return map[grade] ?? 0;
-};
+old_sig = """export const generateMatches = (
+  players: Player[], 
+  matchType: 'TEAM' | 'INDIVIDUAL',
+  numCourts: number = 3,
+  numRounds: number = 5,
+  ignoreGrade: boolean = false
+) => {"""
 
-// Evaluate how balanced a specific match is (lower penalty is better)
-export const evaluateMatchCost = (team1: Player[], team2: Player[]): number => {
-  const s1 = team1.reduce((sum, p) => sum + (p.default_penalty || 0), 0);
-  const s2 = team2.reduce((sum, p) => sum + (p.default_penalty || 0), 0);
-  const diff = Math.abs(s1 - s2);
-  
-  let penalty = (diff ** 2) * 100;
-  if (team1.length === 2) {
-    const d1 = Math.abs(getGradeValue(team1[0].grade) - getGradeValue(team1[1].grade));
-    if (d1 >= 4) penalty += 2000;
-  }
-  if (team2.length === 2) {
-    const d2 = Math.abs(getGradeValue(team2[0].grade) - getGradeValue(team2[1].grade));
-    if (d2 >= 4) penalty += 2000;
-  }
-  return penalty;
-};
-
-// Auto-generate doubles matches (Greedy approach + Randomization + Play Count Balancing)
-export const generateMatches = (
+new_sig = """export const generateMatches = (
   players: Player[], 
   matchType: 'TEAM' | 'INDIVIDUAL',
   numCourts: number = 3,
@@ -43,8 +19,14 @@ export const generateMatches = (
   ignoreGrade: boolean = false,
   manualBlueTeam: Player[] = [],
   manualWhiteTeam: Player[] = []
-) => {
-  const matches = [];
+) => {"""
+content = content.replace(old_sig, new_sig)
+
+
+# We need to completely replace the inside of generateMatches.
+# We will use regex to replace everything from "const matches = [];" to "return matches;"
+
+new_body = """  const matches = [];
   const playCounts: Record<string, number> = {};
   players.forEach(p => playCounts[p.id] = 0);
   manualBlueTeam.forEach(p => playCounts[p.id] = 0);
@@ -167,4 +149,10 @@ export const generateMatches = (
   }
 
   return matches;
-};
+};"""
+
+# Replace everything from `  const matches = [];` to `return matches;\n};`
+content = re.sub(r'  const matches = \[\];.*?return matches;\n};', new_body, content, flags=re.DOTALL)
+
+with open('src/lib/matchMaker.ts', 'w') as f:
+    f.write(content)

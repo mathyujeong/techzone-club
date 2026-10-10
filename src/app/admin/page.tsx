@@ -24,6 +24,7 @@ export default function AdminPage() {
   const [isGeneratorModalOpen, setIsGeneratorModalOpen] = useState(false);
   const [dbPlayers, setDbPlayers] = useState<Player[]>([]);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
+  const [teamAssignments, setTeamAssignments] = useState<Record<string, 'BLUE' | 'WHITE'>>({});
   const [generatedBracket, setGeneratedBracket] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -896,6 +897,19 @@ export default function AdminPage() {
                     <UserPlus className="w-3 h-3" /> 게스트/추가
                   </button>
                 </div>
+                {matchType === 'TEAM' && (
+                  <button onClick={() => {
+                    const selected = dbPlayers.filter(p => selectedPlayerIds.has(p.id));
+                    const sorted = [...selected].sort((a,b) => a.grade.localeCompare(b.grade));
+                    const newAssignments = {...teamAssignments};
+                    sorted.forEach((p, i) => {
+                        newAssignments[p.id] = i % 2 === 0 ? 'BLUE' : 'WHITE';
+                    });
+                    setTeamAssignments(newAssignments);
+                  }} className="w-full text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-2 rounded flex items-center justify-center gap-1 font-bold shadow-sm">
+                    <RefreshCw className="w-3 h-3" /> 선택된 인원 청백팀 균형있게 자동 나누기
+                  </button>
+                )}
                 <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-3 flex-1 overflow-y-auto space-y-2 min-h-0">
                   {dbPlayers.map(p => (
                     <div key={p.id} className="flex items-center justify-between p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg group transition-colors">
@@ -912,6 +926,12 @@ export default function AdminPage() {
                           }}
                         />
                         <span className="font-bold text-sm text-gray-800 dark:text-gray-200">{p.name}</span>
+                        {matchType === 'TEAM' && selectedPlayerIds.has(p.id) && (
+                          <div className="flex gap-0.5 ml-1">
+                            <button onClick={(e) => { e.preventDefault(); setTeamAssignments({...teamAssignments, [p.id]: 'BLUE'}); }} className={`text-[10px] px-1.5 py-0.5 rounded font-black ${teamAssignments[p.id] !== 'WHITE' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-400 dark:bg-gray-700'}`}>청</button>
+                            <button onClick={(e) => { e.preventDefault(); setTeamAssignments({...teamAssignments, [p.id]: 'WHITE'}); }} className={`text-[10px] px-1.5 py-0.5 rounded font-black ${teamAssignments[p.id] === 'WHITE' ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-400 dark:bg-gray-700'}`}>백</button>
+                          </div>
+                        )}
                       </label>
                       <div className="flex gap-1 items-center bg-white dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700 p-0.5">
                         <select 
