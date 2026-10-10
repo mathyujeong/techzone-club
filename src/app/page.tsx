@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Trophy } from "lucide-react";
+import { ArrowRight, Trophy, Lock } from "lucide-react";
 import AddToHomeButton from "@/components/AddToHomeButton";
 
 export default function Home() {
@@ -44,6 +44,14 @@ export default function Home() {
       </div>
 
       <AddToHomeButton />
+
+      <Link
+        href="/admin"
+        className="mt-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-800"
+      >
+        <Lock className="w-3.5 h-3.5" />
+        관리자
+      </Link>
     </div>
   );
 }
