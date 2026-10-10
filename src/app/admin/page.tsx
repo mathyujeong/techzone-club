@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 
 import { generateMatches } from '@/lib/matchMaker';
 import { Player } from '@/lib/types';
-import { Save, X } from 'lucide-react';
+import { Save, X, Lock } from 'lucide-react';
 import { Settings, Plus, Minus, Check, Play, Pause, RefreshCw, Trophy, Users, Trash2, ChevronDown } from "lucide-react";
 
 export default function AdminPage() {
@@ -267,25 +267,83 @@ export default function AdminPage() {
   }
 
 
+  
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+
+  // set selected tournament when tournaments load
+  useEffect(() => {
+    if (tournaments.length > 0 && !selectedTournamentId) {
+      // Find IN_PROGRESS first, otherwise first in list
+      const active = tournaments.find(t => t.status === 'IN_PROGRESS') || tournaments[0];
+      setSelectedTournamentId(active.id);
+    }
+  }, [tournaments]);
+
+  const endTournament = async () => {
+    if(!selectedTournamentId) return;
+    if(confirm('정말로 이 대회를 최종 종료하시겠습니까? 종료 후에는 기록 보관소로 이동합니다.')) {
+      await supabase.from('tournaments').update({ status: 'COMPLETED' }).eq('id', selectedTournamentId);
+      setTournaments(tournaments.map(t => t.id === selectedTournamentId ? { ...t, status: 'COMPLETED' } : t));
+      alert('대회가 종료되었습니다.');
+    }
+  };
+
+  const currentMatches = matches.filter(m => m.tournament_id === selectedTournamentId);
+  const activeTournament = tournaments.find(t => t.id === selectedTournamentId);
+
+  // We need to override the matches logic for stats to only use currentMatches
   const playerStats: Record<string, number> = {};
-  matches.forEach(m => {
+  currentMatches.forEach(m => {
     [m.blue_player1, m.blue_player2, m.white_player1, m.white_player2].forEach(p => {
       if(p) playerStats[p] = (playerStats[p] || 0) + 1;
     });
   });
 
   const blueTeamStats = Object.entries(playerStats)
-    .filter(([name]) => matches.some(m => m.blue_player1 === name || m.blue_player2 === name))
+    .filter(([name]) => currentMatches.some(m => m.blue_player1 === name || m.blue_player2 === name))
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
     
   const whiteTeamStats = Object.entries(playerStats)
-    .filter(([name]) => matches.some(m => m.white_player1 === name || m.white_player2 === name))
+    .filter(([name]) => currentMatches.some(m => m.white_player1 === name || m.white_player2 === name))
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
-  const roundNums = Array.from(new Set(matches.map(m => m.round_num))).sort((a, b) => a - b);
+  const roundNums = Array.from(new Set(currentMatches.map(m => m.round_num))).sort((a, b) => a - b);
+
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col md:flex-row">
+      {/* Sidebar */}
+      <aside className="w-full md:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+          <h1 className="text-xl font-black flex items-center gap-2 mb-4">
+            <Settings className="text-gray-400" />
+            관리자 메뉴
+          </h1>
+          <button onClick={() => { setGeneratedBracket([]); setIsGeneratorModalOpen(true); }} className="w-full bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 hover:bg-blue-700 shadow-sm transition-colors">
+            <RefreshCw className="w-4 h-4" /> 새 대회 생성
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">누적 대회 목록</h2>
+          {tournaments.map(t => (
+            <button 
+              key={t.id}
+              onClick={() => setSelectedTournamentId(t.id)}
+              className={`w-full text-left p-3 rounded-xl transition-colors flex flex-col gap-1 ${selectedTournamentId === t.id ? 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'}`}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`font-bold text-sm ${selectedTournamentId === t.id ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-700 dark:text-gray-300'}`}>{t.title}</span>
+                <div className={`w-2 h-2 rounded-full ${t.status === 'IN_PROGRESS' ? 'bg-green-500' : 'bg-gray-300'}`} />
+              </div>
+              <span className="text-[10px] text-gray-400">{new Date(t.created_at).toLocaleDateString()}</span>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto h-screen pb-20">
 
             {editMatchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -536,16 +594,16 @@ export default function AdminPage() {
             </h3>
             <div className="flex gap-2 text-center text-sm font-bold">
               <div className="flex-1 bg-blue-50 border border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-300 py-2 rounded-xl">
-                남복 <span className="text-lg font-black ml-1">{matches.filter(m => (m.match_type || '').startsWith('MD')).length}</span>
+                남복 <span className="text-lg font-black ml-1">{currentMatches.filter(m => (m.match_type || '').startsWith('MD')).length}</span>
               </div>
               <div className="flex-1 bg-pink-50 border border-pink-100 text-pink-700 dark:bg-pink-900/20 dark:border-pink-800/50 dark:text-pink-300 py-2 rounded-xl">
-                여복 <span className="text-lg font-black ml-1">{matches.filter(m => (m.match_type || '').startsWith('WD')).length}</span>
+                여복 <span className="text-lg font-black ml-1">{currentMatches.filter(m => (m.match_type || '').startsWith('WD')).length}</span>
               </div>
               <div className="flex-1 bg-purple-50 border border-purple-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800/50 dark:text-purple-300 py-2 rounded-xl">
-                혼복 <span className="text-lg font-black ml-1">{matches.filter(m => (m.match_type || '').startsWith('XD')).length}</span>
+                혼복 <span className="text-lg font-black ml-1">{currentMatches.filter(m => (m.match_type || '').startsWith('XD')).length}</span>
               </div>
               <div className="flex-1 bg-gray-100 border border-gray-200 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 py-2 rounded-xl">
-                총 <span className="text-lg font-black ml-1">{matches.length}</span>
+                총 <span className="text-lg font-black ml-1">{currentMatches.length}</span>
               </div>
             </div>
           </div>
@@ -554,7 +612,7 @@ export default function AdminPage() {
 
       <div className="container mx-auto px-4 py-8 space-y-12">
         {roundNums.map(roundNum => {
-          const roundMatches = matches.filter(m => m.round_num === roundNum);
+          const roundMatches = currentMatches.filter(m => m.round_num === roundNum);
           return (
             <div key={roundNum} className="space-y-4">
               <h2 className="text-2xl font-black flex items-center gap-2 text-gray-800 dark:text-gray-200">
@@ -743,6 +801,7 @@ export default function AdminPage() {
         </div>
       )}
 
+      </main>
     </div>
   );
 }
