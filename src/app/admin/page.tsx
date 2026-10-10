@@ -37,6 +37,8 @@ export default function AdminPage() {
 
   const [isPlayerManageModalOpen, setIsPlayerManageModalOpen] = useState(false);
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{type: 'tournament'|'match', id: string} | null>(null);
+  const [deleteCode, setDeleteCode] = useState("");
   const [guestName, setGuestName] = useState("");
   const [guestGrade, setGuestGrade] = useState("E");
   const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
@@ -63,16 +65,28 @@ export default function AdminPage() {
     }
   };
 
-  const deleteTournament = async (id: string) => {
-    const code = prompt('이 대회와 모든 하위 경기가 삭제됩니다. 삭제하려면 0000 을 입력하세요.');
-    if (code === '0000') {
-      await supabase.from('tournaments').delete().eq('id', id);
-      setTournaments(tournaments.filter(t => t.id !== id));
-      if (selectedTournamentId === id) setSelectedTournamentId(null);
-      setEditingTournamentId(null);
-    } else if (code !== null) {
-      alert('입력한 코드가 틀렸습니다.');
+  const executeDelete = async () => {
+    if (deleteCode !== '0000') {
+      alert('코드가 일치하지 않습니다.');
+      return;
     }
+    if (deleteConfirm?.type === 'tournament') {
+      await supabase.from('tournaments').delete().eq('id', deleteConfirm.id);
+      setTournaments(tournaments.filter(t => t.id !== deleteConfirm.id));
+      if (selectedTournamentId === deleteConfirm.id) setSelectedTournamentId(null);
+      setEditingTournamentId(null);
+    } else if (deleteConfirm?.type === 'match') {
+      setMatches(matches.filter(m => m.id !== deleteConfirm.id));
+      await supabase.from('matches').delete().eq('id', deleteConfirm.id);
+      setEditMatchModal(null);
+      fetchPlayersAndTournaments();
+    }
+    setDeleteConfirm(null);
+  };
+
+  const deleteTournament = (id: string) => {
+    setDeleteCode("");
+    setDeleteConfirm({ type: 'tournament', id });
   };
 
 
@@ -317,16 +331,10 @@ export default function AdminPage() {
     fetchMatches();
   }
 
-  async function deleteMatch(id: string) {
-    const code = prompt('이 경기를 완전히 삭제하려면 0000 을 입력하세요.');
-    if (code === '0000') {
-      setMatches(matches.filter(m => m.id !== id));
-      await supabase.from('matches').delete().eq('id', id);
-      setEditMatchModal(null);
-    } else if (code !== null) {
-      alert('입력한 코드가 틀렸습니다.');
-    }
-  }
+  const deleteMatch = (id: string) => {
+    setDeleteCode("");
+    setDeleteConfirm({ type: 'match', id });
+  };
 
   if (!authed) {
     return (
@@ -765,7 +773,7 @@ export default function AdminPage() {
                 <span className="bg-yellow-500 text-white px-3 py-1 rounded-lg text-lg">{roundNum}R</span>
               </h2>
               
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                 {roundMatches.map(m => {
                   const [actualType, bluePen, whitePen] = (m.match_type || '').split(':');
                   const tName = actualType === 'MD' ? '남복' : actualType === 'WD' ? '여복' : actualType === 'XD' ? '혼복' : actualType;
@@ -785,24 +793,24 @@ export default function AdminPage() {
                     </div>
                     
                     {/* 청팀 */}
-                    <div className={`p-1.5 flex justify-between items-center border-b border-gray-100 dark:border-gray-800 flex-1 ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
+                    <div className={`p-2 md:p-3 flex justify-between items-center border-b border-gray-100 dark:border-gray-800 flex-1 ${m.status === 'completed' && m.blue_score > m.white_score ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
                       <div 
-                        className="font-bold text-[12px] text-blue-700 dark:text-blue-400 cursor-pointer w-full"
+                        className="font-black text-sm sm:text-base md:text-lg text-blue-700 dark:text-blue-400 cursor-pointer w-full flex flex-col justify-center min-w-0 pr-2"
                         onClick={() => editPlayers(m.id, 'blue', m.blue_player1, m.blue_player2)}
                       >
                         <div className="truncate w-full">{m.blue_player1}</div>
                         <div className="truncate w-full">{m.blue_player2}</div>
-                        {bluePen && bluePen !== '0' && <div className="text-[9px] text-red-500">패널티 {bluePen}</div>}
+                        {bluePen && bluePen !== '0' && <div className="text-[10px] md:text-xs font-bold text-red-500 mt-0.5">패널티 {bluePen}</div>}
                       </div>
                       <button 
                         onClick={() => setWinner(m.id, 'blue')} 
-                        className={`w-7 h-7 flex justify-center items-center rounded-full border shrink-0 ml-1 shadow-sm ${
+                        className={`w-9 h-9 md:w-11 md:h-11 flex justify-center items-center rounded-full border shrink-0 shadow-sm transition-all ${
                           m.status === 'completed' && m.blue_score > m.white_score 
                             ? 'bg-blue-600 border-blue-600 text-white' 
-                            : 'bg-white border-blue-200 text-blue-500 dark:bg-gray-800'
+                            : 'bg-white border-blue-200 text-blue-500 hover:bg-blue-50 dark:bg-gray-800'
                         }`}
                       >
-                        <span className="text-[10px] font-black leading-none">{m.status === 'completed' && m.blue_score > m.white_score ? 'WIN' : '승'}</span>
+                        <span className="text-xs md:text-sm font-black leading-none">{m.status === 'completed' && m.blue_score > m.white_score ? 'WIN' : '승'}</span>
                       </button>
                     </div>
 
@@ -968,16 +976,16 @@ export default function AdminPage() {
                           <span className="text-xs font-black text-gray-500 mb-1">{m.round_num}R - {m.court_num}코트</span>
                           <span className={`text-xs font-black px-2 py-1 rounded w-max ${matchType === 'TEAM' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 bg-gray-100 dark:bg-gray-800'}`}>{matchType === 'TEAM' ? '청팀' : 'A조'}</span>
                           <div className="flex gap-2">
-                            <button onClick={() => handleSwapGenerated(idx, 'blue', 0)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all">{m.blue_team[0].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[0].grade}</span>}</button>
-                            <button onClick={() => handleSwapGenerated(idx, 'blue', 1)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all">{m.blue_team[1].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[1].grade}</span>}</button>
+                            <button onClick={() => handleSwapGenerated(idx, 'blue', 0)} className="text-sm md:text-base bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all min-w-0">{m.blue_team[0].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[0].grade}</span>}</button>
+                            <button onClick={() => handleSwapGenerated(idx, 'blue', 1)} className="text-sm md:text-base bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-blue-200 transition-all min-w-0">{m.blue_team[1].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.blue_team[1].grade}</span>}</button>
                           </div>
                         </div>
                         <div className="px-5 flex items-center justify-center font-black text-gray-300 italic text-lg">VS</div>
                         <div className="flex-1 flex flex-col justify-center gap-2 pl-4">
                           <span className="text-xs font-black text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded w-max">{matchType === 'TEAM' ? '백팀' : 'B조'}</span>
                           <div className="flex gap-2">
-                            <button onClick={() => handleSwapGenerated(idx, 'white', 0)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all">{m.white_team[0].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[0].grade}</span>}</button>
-                            <button onClick={() => handleSwapGenerated(idx, 'white', 1)} className="text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all">{m.white_team[1].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[1].grade}</span>}</button>
+                            <button onClick={() => handleSwapGenerated(idx, 'white', 0)} className="text-sm md:text-base bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all min-w-0">{m.white_team[0].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[0].grade}</span>}</button>
+                            <button onClick={() => handleSwapGenerated(idx, 'white', 1)} className="text-sm md:text-base bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 p-2 rounded-lg font-bold w-full text-left truncate border border-transparent hover:border-gray-300 transition-all min-w-0">{m.white_team[1].name} {!hideGrade && <span className="text-xs font-normal text-gray-400 ml-1">{m.white_team[1].grade}</span>}</button>
                           </div>
                         </div>
                       </div>
@@ -1099,6 +1107,50 @@ export default function AdminPage() {
             >
               추가하기
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- 안전 삭제 모달 --- */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-red-100 dark:border-red-900/30">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-red-600 dark:text-red-500">
+                <Trash2 className="w-6 h-6" /> 영구 삭제 확인
+              </h2>
+              <button onClick={() => setDeleteConfirm(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 font-medium leading-relaxed">
+              {deleteConfirm.type === 'tournament' 
+                ? '이 대회와 관련된 모든 경기 기록이 완전히 삭제되며 복구할 수 없습니다.' 
+                : '선택하신 경기가 완전히 삭제되며 복구할 수 없습니다.'}
+              <br /><br />
+              정말로 삭제하시려면 아래에 <strong className="text-red-500">0000</strong> 을 입력해주세요.
+            </p>
+
+            <div className="space-y-4">
+              <input 
+                type="text" 
+                value={deleteCode} 
+                onChange={(e) => setDeleteCode(e.target.value)} 
+                placeholder="0000"
+                maxLength={4}
+                autoFocus
+                className="w-full bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/50 rounded-xl px-4 py-4 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all font-black text-center text-2xl tracking-[0.5em] text-red-600 placeholder-red-300"
+                onKeyDown={(e) => e.key === 'Enter' && executeDelete()}
+              />
+              <button 
+                onClick={executeDelete}
+                disabled={deleteCode !== '0000'}
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-md"
+              >
+                <Trash2 className="w-5 h-5" /> 완전히 삭제하기
+              </button>
+            </div>
           </div>
         </div>
       )}
