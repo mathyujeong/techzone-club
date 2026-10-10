@@ -10,14 +10,30 @@ export default function TournamentPage() {
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
 
+  const [activeTournament, setActiveTournament] = useState<any>(null);
+
   async function fetchMatches() {
-    const { data, error } = await supabase
-      .from('matches')
+    // 1. Get the most recently active tournament (or just the latest one)
+    const { data: tData } = await supabase
+      .from('tournaments')
       .select('*')
-      .order('round_num', { ascending: true })
-      .order('court_num', { ascending: true });
-    
-    if (data) setMatches(data);
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+      
+    if (tData) {
+      setActiveTournament(tData);
+      
+      // 2. Fetch matches ONLY for this tournament
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('tournament_id', tData.id)
+        .order('round_num', { ascending: true })
+        .order('court_num', { ascending: true });
+        
+      if (data) setMatches(data);
+    }
     setLoading(false);
   }
 
