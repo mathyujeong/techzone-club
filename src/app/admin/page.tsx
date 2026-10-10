@@ -1,7 +1,7 @@
 /* eslint-disable */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 import { generateMatches } from '@/lib/matchMaker';
@@ -51,6 +51,9 @@ export default function AdminPage() {
   const [teamAssignments, setTeamAssignments] = useState<Record<string, 'BLUE' | 'WHITE'>>({});
   const [generatedBracket, setGeneratedBracket] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSavingMatches, setIsSavingMatches] = useState(false);
+  const matchSaveInFlight = useRef(false);
+  const savedBracket = useRef<any[] | null>(null);
 
   const [numCourts, setNumCourts] = useState(3);
   const [numRounds, setNumRounds] = useState(5);
@@ -176,6 +179,7 @@ export default function AdminPage() {
 
   const activePlayersForDropdown = dbPlayers.filter(p => selectedPlayerIds.has(p.id)).sort((a,b) => a.name.localeCompare(b.name));
   const handleGenerate = () => {
+    if (matchSaveInFlight.current) return;
     setIsGenerating(true);
     setTimeout(() => {
       const activePlayers = dbPlayers.filter(p => selectedPlayerIds.has(p.id));
@@ -200,42 +204,56 @@ export default function AdminPage() {
   };
 
   const saveTournament = async () => {
+    if (matchSaveInFlight.current || generatedBracket.length === 0 || savedBracket.current === generatedBracket) return;
     if (!selectedTournamentId) {
       alert("선택된 대회가 없습니다. 왼쪽 메뉴에서 대회를 먼저 선택하거나 '새 대회 추가'를 눌러주세요.");
       return;
     }
 
-    // Save match_type and display_mode to the tournament in Supabase
-    await supabase.from('tournaments').update({ match_type: matchType, display_mode: recordMode }).eq('id', selectedTournamentId);
-    setTournaments(tournaments.map(t => t.id === selectedTournamentId ? { ...t, match_type: matchType, display_mode: recordMode } : t));
+    matchSaveInFlight.current = true;
+    setIsSavingMatches(true);
+    try {
+      // Save match_type and display_mode to the tournament in Supabase
+      const { error: tournamentError } = await supabase.from('tournaments').update({ match_type: matchType, display_mode: recordMode }).eq('id', selectedTournamentId);
+      if (tournamentError) throw new Error(tournamentError.message);
+      setTournaments(tournaments.map(t => t.id === selectedTournamentId ? { ...t, match_type: matchType, display_mode: recordMode } : t));
 
-    const currentTournamentMatches = matches.filter(m => m.tournament_id === selectedTournamentId);
-    let maxRound = 0;
-    if (currentTournamentMatches.length > 0) {
-      maxRound = Math.max(...currentTournamentMatches.map(m => m.round_num));
+      const currentTournamentMatches = matches.filter(m => m.tournament_id === selectedTournamentId);
+      let maxRound = 0;
+      if (currentTournamentMatches.length > 0) {
+        maxRound = Math.max(...currentTournamentMatches.map(m => m.round_num));
+      }
+
+      const matchInserts = generatedBracket.map((m, i) => {
+        const generatedRound = m.round_num || Math.floor(i / numCourts) + 1;
+        return {
+          tournament_id: selectedTournamentId,
+          round_num: generatedRound + maxRound,
+          court_num: m.court_num || (i % numCourts) + 1,
+          match_type: m.match_type + ':0:0',
+          blue_player1: m.blue_team[0].name,
+          blue_player2: m.blue_team[1].name,
+          white_player1: m.white_team[0].name,
+          white_player2: m.white_team[1].name,
+          blue_score: 0,
+          white_score: 0,
+          status: 'pending'
+        };
+      });
+
+      const { error: matchError } = await supabase.from('matches').insert(matchInserts);
+      if (matchError) throw new Error(matchError.message);
+      savedBracket.current = generatedBracket;
+      setGeneratedBracket([]);
+      setIsGeneratorModalOpen(false);
+      await fetchMatches();
+      alert('새 대진표가 성공적으로 적용되었습니다!');
+    } catch (error) {
+      alert('대진표 저장 실패: ' + (error instanceof Error ? error.message : '다시 시도해주세요.'));
+    } finally {
+      matchSaveInFlight.current = false;
+      setIsSavingMatches(false);
     }
-
-    const matchInserts = generatedBracket.map((m, i) => {
-      const generatedRound = m.round_num || Math.floor(i / numCourts) + 1;
-      return {
-        tournament_id: selectedTournamentId,
-        round_num: generatedRound + maxRound,
-        court_num: m.court_num || (i % numCourts) + 1,
-        match_type: m.match_type + ':0:0',
-        blue_player1: m.blue_team[0].name,
-        blue_player2: m.blue_team[1].name,
-        white_player1: m.white_team[0].name,
-        white_player2: m.white_team[1].name,
-        blue_score: 0,
-        white_score: 0,
-        status: 'pending'
-      };
-    });
-
-    await supabase.from('matches').insert(matchInserts);
-    setIsGeneratorModalOpen(false);
-    await fetchMatches();
-    alert('새 대진표가 성공적으로 적용되었습니다!');
   };
 
   const handleSwapGenerated = (matchIndex: number, team: 'blue' | 'white', playerIndex: 0 | 1, targetPlayerName: string) => {
@@ -307,7 +325,7 @@ export default function AdminPage() {
   function editPlayers(id: string, team: 'blue' | 'white', p1: string, p2: string) {
     setEditPlayerModal({ id, team, currentP1: p1, currentP2: p2 });
     
-    const teamStats = team === 'blue' ? blueTeamStats : whiteTeamStats;
+    const teamStats = isIndividualMode ? allStats : team === 'blue' ? blueTeamStats : whiteTeamStats;
     const isP1Exist = teamStats.some(s => s.name === p1);
     const isP2Exist = teamStats.some(s => s.name === p2);
     
@@ -393,29 +411,38 @@ export default function AdminPage() {
   }
 
   async function addMatch() {
-    if (!selectedTournamentId) return;
-    const round = parseInt(prompt("몇 라운드에 추가할까요?", "1") || "0");
-    if (!round) return;
-    const court = parseInt(prompt("코트 번호는요?", "1") || "1");
+    if (!selectedTournamentId || matchSaveInFlight.current) return;
+    matchSaveInFlight.current = true;
+    setIsSavingMatches(true);
+    try {
+      const round = parseInt(prompt("몇 라운드에 추가할까요?", "1") || "0");
+      if (!round) return;
+      const court = parseInt(prompt("코트 번호는요?", "1") || "1");
     
-    const { error } = await supabase.from('matches').insert({
-      tournament_id: selectedTournamentId,
-      round_num: round,
-      court_num: court,
-      match_type: 'MD:0:0',
-      blue_player1: '선수1',
-      blue_player2: '선수2',
-      white_player1: '선수3',
-      white_player2: '선수4',
-      blue_score: 0,
-      white_score: 0,
-      status: 'pending'
-    });
-    if (error) {
-      alert('경기 추가 실패: ' + error.message);
-      return;
+      const { error } = await supabase.from('matches').insert({
+        tournament_id: selectedTournamentId,
+        round_num: round,
+        court_num: court,
+        match_type: 'MD:0:0',
+        blue_player1: '선수1',
+        blue_player2: '선수2',
+        white_player1: '선수3',
+        white_player2: '선수4',
+        blue_score: 0,
+        white_score: 0,
+        status: 'pending'
+      });
+      if (error) {
+        alert('경기 추가 실패: ' + error.message);
+        return;
+      }
+      await fetchMatches();
+    } catch (error) {
+      alert('경기 추가 실패: ' + (error instanceof Error ? error.message : '다시 시도해주세요.'));
+    } finally {
+      matchSaveInFlight.current = false;
+      setIsSavingMatches(false);
     }
-    await fetchMatches();
   }
 
   const deleteMatch = (id: string) => {
@@ -719,7 +746,7 @@ export default function AdminPage() {
       {editPlayerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6 border border-gray-200 dark:border-gray-800">
-            <h2 className="text-xl font-bold mb-4">{editPlayerModal.team === 'blue' ? '청팀' : '백팀'} 선수 교체</h2>
+            <h2 className="text-xl font-bold mb-4">{isIndividualMode ? '선수 교체' : `${editPlayerModal.team === 'blue' ? '청팀' : '백팀'} 선수 교체`}</h2>
             
             <div className="space-y-6 mb-8">
               <div>
@@ -734,7 +761,7 @@ export default function AdminPage() {
                     className="w-full appearance-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3.5 outline-none mb-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all font-medium cursor-pointer shadow-sm"
                   >
                     <option value="">-- 선택 --</option>
-                    {(editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(({name}) => (
+                    {(isIndividualMode ? allStats : editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(({name}) => (
                       <option key={name} value={name}>{name}</option>
                     ))}
                     <option value="직접입력">+ 새 선수/게스트 직접입력</option>
@@ -765,7 +792,7 @@ export default function AdminPage() {
                     className="w-full appearance-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3.5 outline-none mb-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all font-medium cursor-pointer shadow-sm"
                   >
                     <option value="">-- 선택 --</option>
-                    {(editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(({name}) => (
+                    {(isIndividualMode ? allStats : editPlayerModal.team === 'blue' ? blueTeamStats : whiteTeamStats).map(({name}) => (
                       <option key={name} value={name}>{name}</option>
                     ))}
                     <option value="직접입력">+ 새 선수/게스트 직접입력</option>
@@ -820,10 +847,10 @@ export default function AdminPage() {
             점수 관리 보드
           </h1>
           <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto">
-            <button onClick={() => { setGeneratedBracket([]); setIsGeneratorModalOpen(true); }} className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-blue-600 px-2 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 sm:px-3 sm:text-sm">
+            <button disabled={isSavingMatches} onClick={() => { setGeneratedBracket([]); setIsGeneratorModalOpen(true); }} className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-blue-600 px-2 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 sm:px-3 sm:text-sm disabled:opacity-50">
               <RefreshCw className="h-4 w-4 shrink-0" /> 새 대진표 자동생성
             </button>
-            <button onClick={addMatch} className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-2.5 text-xs font-bold text-white hover:opacity-80 dark:bg-gray-100 dark:text-black sm:px-3 sm:text-sm">
+            <button disabled={isSavingMatches} onClick={addMatch} className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-2.5 text-xs font-bold text-white hover:opacity-80 dark:bg-gray-100 dark:text-black sm:px-3 sm:text-sm disabled:opacity-50">
               <Plus className="h-4 w-4 shrink-0" /> 빈 경기 추가
             </button>
           </div>
@@ -1101,7 +1128,7 @@ export default function AdminPage() {
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <RefreshCw className="text-blue-600" /> 대진표 자동 생성기
               </h2>
-              <button onClick={() => setIsGeneratorModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+              <button disabled={isSavingMatches} onClick={() => setIsGeneratorModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full disabled:opacity-50">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1194,7 +1221,7 @@ export default function AdminPage() {
                 {/* 2차 버튼 영역: 풀 너비 메인 실행 버튼 */}
                 <button 
                   onClick={handleGenerate}
-                  disabled={isGenerating || selectedPlayerIds.size < 4}
+                  disabled={isGenerating || isSavingMatches || selectedPlayerIds.size < 4}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-md text-base"
                 >
                   <RefreshCw className={`w-5 h-5 ${isGenerating ? 'animate-spin' : ''}`} />
@@ -1387,14 +1414,14 @@ export default function AdminPage() {
             </div>
 
             <div className="p-5 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-end gap-3">
-              <button onClick={() => setIsGeneratorModalOpen(false)} className="px-6 py-3 font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">취소</button>
+              <button disabled={isSavingMatches} onClick={() => setIsGeneratorModalOpen(false)} className="px-6 py-3 font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50">취소</button>
               <button 
                 onClick={saveTournament}
-                disabled={generatedBracket.length === 0}
+                disabled={generatedBracket.length === 0 || isSavingMatches}
                 className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center gap-2 disabled:opacity-50 transition-all shadow-md"
               >
                 <Save className="w-5 h-5" />
-                이 대진표로 실제 경기 생성하기
+                {isSavingMatches ? '저장 중...' : '이 대진표로 실제 경기 생성하기'}
               </button>
             </div>
           </div>
