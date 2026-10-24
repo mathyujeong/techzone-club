@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Archive, ArrowLeft, ClipboardList, LoaderCircle, Plus, RefreshCw, Search, Trash2, Users, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import PaymentRosters from "@/components/PaymentRosters";
 import { checklistError, checklistSummary, parseWon, type ChecklistEntry, type ClubChecklist } from "@/lib/checklists";
 import type { Player } from "@/lib/types";
 
@@ -214,6 +215,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const locks = useRef(new Set<string>());
   const detailRequest = useRef(0);
+  const entryListRef = useRef<HTMLDivElement>(null);
   const roster = players.filter(player => !player.id.startsWith("guest_")).sort((a, b) => a.name.localeCompare(b.name, "ko"));
   const selected = checklists.find(checklist => checklist.id === selectedId);
   const busy = busyIds.size > 0;
@@ -358,7 +360,12 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
                   { label: "미납 금액", value: won(summary.totalAmount - summary.paidAmount), hint: "납부 X 회원 합계" },
                 ].map(item => <div key={item.label} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"><p className="text-xs text-gray-500">{item.label}</p><p className="mt-2 break-all text-xl font-black">{item.value}</p><p className="mt-1 text-xs text-gray-500">{item.hint}</p></div>)}
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <PaymentRosters title={selected.title} entries={entries} busy={busy} onFilter={value => {
+                setFilter(value);
+                setSearch("");
+                entryListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }} />
+              <div ref={entryListRef} className="scroll-mt-20 flex flex-wrap items-center gap-2">
                 <div className="relative min-w-36 flex-1"><Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" /><input aria-label="체크리스트 회원 검색" placeholder="이름 검색" value={search} onChange={event => setSearch(event.target.value)} className={`${inputClass} pl-9`} /></div>
                 <select aria-label="납부 상태 필터" value={filter} onChange={event => setFilter(event.target.value as typeof filter)} className={inputClass.replace("w-full", "w-28 shrink-0")}><option value="all">전체</option><option value="unpaid">미납 X</option><option value="paid">납부 O</option></select>
                 <button aria-label="회원 기록 새로고침" disabled={busy} onClick={() => { setErrorMessage(""); void loadEntries(selected.id); }} className={buttonClass}><RefreshCw className="h-4 w-4" /></button>

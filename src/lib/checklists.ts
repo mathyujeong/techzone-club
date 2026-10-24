@@ -32,6 +32,20 @@ export function checklistSummary(entries: ChecklistEntry[]) {
   );
 }
 
+export function groupChecklistPayments(entries: ChecklistEntry[]) {
+  const sorted = [...entries].sort((a, b) => a.player_name.localeCompare(b.player_name, "ko"));
+  return {
+    paid: sorted.filter(entry => entry.is_paid),
+    unpaid: sorted.filter(entry => !entry.is_paid),
+  };
+}
+
+export function formatPaymentRoster(title: string, label: "납부" | "미납", entries: ChecklistEntry[]) {
+  const names = [...entries].sort((a, b) => a.player_name.localeCompare(b.player_name, "ko"))
+    .map(entry => entry.player_name);
+  return `[${title}]\n${label} 명단 (${names.length}명)\n${names.join(", ") || "없음"}`;
+}
+
 export function parseWon(value: string): number | null {
   if (!/^\d+$/.test(value)) return null;
   const amount = Number(value);
