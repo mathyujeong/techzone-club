@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Archive, ArrowLeft, ClipboardList, LoaderCircle, Plus, RefreshCw, Search, Users, X } from "lucide-react";
+import { Archive, ArrowLeft, ClipboardList, LoaderCircle, Plus, RefreshCw, Search, Trash2, Users, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { checklistError, checklistSummary, parseWon, type ChecklistEntry, type ClubChecklist } from "@/lib/checklists";
 import type { Player } from "@/lib/types";
@@ -159,6 +159,44 @@ function PaidButton({ entry, disabled, saving, onClick }: { entry: ChecklistEntr
   return <button aria-label={`${entry.player_name} 납부 ${entry.is_paid ? "O" : "X"}`} aria-pressed={entry.is_paid} disabled={disabled} onClick={onClick} className={`flex min-h-11 min-w-16 items-center justify-center gap-1 rounded-xl border px-3 py-2 font-black disabled:cursor-not-allowed disabled:opacity-60 ${entry.is_paid ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950/40 dark:text-green-400" : "border-gray-200 bg-gray-100 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"}`}>{saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : entry.is_paid ? "O" : "X"}</button>;
 }
 
+function DeleteDialog({ checklist, onClose, onDeleted }: { checklist: ClubChecklist; onClose: () => void; onDeleted: (id: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const inFlight = useRef(false);
+
+  async function remove() {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const { error: resultError } = await supabase.from("club_checklists")
+        .delete().eq("id", checklist.id).select("id").single();
+      if (resultError) throw new Error(resultError.message);
+      onDeleted(checklist.id);
+    } catch (resultError) {
+      setError(`삭제하지 못했어요. ${resultError instanceof Error ? resultError.message : "잠시 후 다시 시도해주세요."}`);
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog title="체크리스트 삭제" onClose={onClose} busy={busy}>
+      <div className="space-y-5 p-5">
+        <p className="break-all font-bold">‘{checklist.title}’ 체크리스트를 삭제할까요?</p>
+        <p className="rounded-xl bg-red-50 p-4 text-sm leading-relaxed text-red-700 dark:bg-red-950/40 dark:text-red-300">이 체크리스트의 주문 내용과 납부 기록이 모두 삭제되며 복구할 수 없어요.</p>
+        {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <button type="button" autoFocus disabled={busy} onClick={onClose} className={buttonClass}>취소</button>
+          <button type="button" disabled={busy} onClick={() => void remove()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">{busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{busy ? "삭제 중…" : "삭제하기"}</button>
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
 export default function ChecklistManager({ players }: { players: Player[] }) {
   const [checklists, setChecklists] = useState<ClubChecklist[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -173,6 +211,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<ChecklistEntry | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ClubChecklist | null>(null);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const locks = useRef(new Set<string>());
   const detailRequest = useRef(0);
@@ -284,11 +323,14 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
           {loading ? <p role="status" className="py-16 text-center text-gray-500">체크리스트를 불러오는 중…</p> : (
             <div className="grid gap-4 md:grid-cols-2">
               {checklists.filter(item => item.archived === (scope === "archived")).map(item => (
-                <button key={item.id} onClick={() => openList(item.id)} className="flex min-h-36 flex-col items-start rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-yellow-400 hover:shadow-md dark:border-gray-800 dark:bg-gray-900">
-                  <span className="mb-3 rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-500 dark:bg-gray-800">{item.archived ? "보관됨" : "진행 중"} · {new Date(item.created_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</span>
-                  <h2 className="break-all text-lg font-bold">{item.title}</h2>
-                  <p className="mt-2 line-clamp-2 whitespace-pre-wrap break-all text-sm text-gray-500">{item.description || `${item.input_label} · 납부 O/X 관리`}</p>
-                </button>
+                <article key={item.id} className="relative">
+                  <button onClick={() => openList(item.id)} className="flex h-full min-h-36 w-full flex-col items-start rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-yellow-400 hover:shadow-md dark:border-gray-800 dark:bg-gray-900">
+                    <span className="mb-3 mr-10 rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-500 dark:bg-gray-800">{item.archived ? "보관됨" : "진행 중"} · {new Date(item.created_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</span>
+                    <h2 className="break-all text-lg font-bold">{item.title}</h2>
+                    <p className="mt-2 line-clamp-2 whitespace-pre-wrap break-all text-sm text-gray-500">{item.description || `${item.input_label} · 납부 O/X 관리`}</p>
+                  </button>
+                  <button aria-label={`${item.title} 체크리스트 삭제`} disabled={busy} onClick={() => setDeleteTarget(item)} className="absolute top-3 right-3 flex h-11 w-11 items-center justify-center rounded-xl text-red-500 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950/40"><Trash2 className="h-4 w-4" /></button>
+                </article>
               ))}
               {!checklists.some(item => item.archived === (scope === "archived")) && <div className="col-span-full rounded-2xl border-2 border-dashed border-gray-200 py-16 text-center dark:border-gray-800"><ClipboardList className="mx-auto mb-3 h-10 w-10 text-gray-300" /><p className="font-bold">{scope === "archived" ? "보관한 체크리스트가 없어요." : "첫 체크리스트를 만들어보세요."}</p><p className="mt-2 text-sm text-gray-500">{scope === "archived" ? "완료한 목록은 기록을 보관할 수 있어요." : `등록된 회원 ${roster.length}명을 불러와 바로 시작할 수 있어요.`}</p></div>}
             </div>
@@ -300,7 +342,10 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
             <button disabled={busy} onClick={() => { detailRequest.current++; setSelectedId(null); setNotice(null); }} className="mb-4 flex items-center gap-1 text-sm text-gray-500 disabled:opacity-50"><ArrowLeft className="h-4 w-4" />목록으로</button>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="break-all text-xl font-black">{selected.title}</h2>
-              <button disabled={busy || detailLoading || detailError} onClick={toggleArchive} className={buttonClass}>{selected.archived ? <RefreshCw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}{selected.archived ? "다시 열기" : "완료하고 보관"}</button>
+              <div className="flex flex-wrap gap-2">
+                <button disabled={busy || detailLoading || detailError} onClick={toggleArchive} className={buttonClass}>{selected.archived ? <RefreshCw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}{selected.archived ? "다시 열기" : "완료하고 보관"}</button>
+                <button disabled={busy} onClick={() => setDeleteTarget(selected)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"><Trash2 className="h-4 w-4" />삭제</button>
+              </div>
             </div>
             {selected.description && <p className="mt-3 whitespace-pre-wrap break-all text-sm text-gray-500">{selected.description}</p>}
             {selected.archived && <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">보관된 기록이에요. 수정하려면 ‘다시 열기’를 눌러주세요.</p>}
@@ -366,6 +411,18 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
       }} />}
       {editing && selected && <EntryDialog entry={editing} checklist={selected} onClose={() => setEditing(null)} onSaved={entry => { replaceEntry(entry); setEditing(null); setNotice({ kind: "success", message: `${entry.player_name} 님의 주문 정보를 저장했어요.` }); }} />}
       {addOpen && selected && <AddMembersDialog players={available} checklistId={selected.id} onClose={() => setAddOpen(false)} onSaved={() => { setAddOpen(false); void loadEntries(selected.id); setNotice({ kind: "success", message: "대상 회원을 추가했어요." }); }} />}
+      {deleteTarget && <DeleteDialog checklist={deleteTarget} onClose={() => setDeleteTarget(null)} onDeleted={id => {
+        setChecklists(current => current.filter(item => item.id !== id));
+        if (selectedId === id) {
+          detailRequest.current++;
+          setSelectedId(null);
+          setEntries([]);
+          setDetailLoading(false);
+          setDetailError(false);
+        }
+        setDeleteTarget(null);
+        setNotice({ kind: "success", message: "체크리스트와 관련 주문·납부 기록을 삭제했어요." });
+      }} />}
     </section>
   );
 }
