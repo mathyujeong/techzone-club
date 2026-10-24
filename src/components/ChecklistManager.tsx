@@ -10,7 +10,6 @@ const inputClass = "w-full rounded-xl border border-gray-300 bg-white px-3 py-2.
 const buttonClass = "inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800";
 const primaryClass = "inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-yellow-700 disabled:cursor-not-allowed disabled:opacity-50";
 const won = (amount: number) => `${amount.toLocaleString("ko-KR")}원`;
-type Notice = { kind: "success" | "error"; message: string } | null;
 
 function Dialog({ title, onClose, busy, children }: { title: string; onClose: () => void; busy: boolean; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -204,7 +203,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(false);
-  const [notice, setNotice] = useState<Notice>(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [scope, setScope] = useState<"active" | "archived">("active");
   const [filter, setFilter] = useState<"all" | "unpaid" | "paid">("all");
   const [search, setSearch] = useState("");
@@ -222,7 +221,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
   async function loadLists() {
     setLoading(true);
     const { data, error } = await supabase.from("club_checklists").select("*").order("created_at", { ascending: false });
-    if (error) { setNotice({ kind: "error", message: checklistError(error) }); setLoading(false); return false; }
+    if (error) { setErrorMessage(checklistError(error)); setLoading(false); return false; }
     setChecklists(data as ClubChecklist[]);
     setLoading(false);
     return true;
@@ -235,7 +234,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
     setEntries([]);
     const { data, error } = await supabase.from("club_checklist_entries").select("*").eq("checklist_id", id).order("player_name");
     if (request !== detailRequest.current) return;
-    if (error) { setDetailError(true); setNotice({ kind: "error", message: checklistError(error) }); }
+    if (error) { setDetailError(true); setErrorMessage(checklistError(error)); }
     else setEntries((data as ChecklistEntry[]).sort((a, b) => a.player_name.localeCompare(b.player_name, "ko")));
     setDetailLoading(false);
   }
@@ -245,7 +244,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
     const requests = detailRequest;
     supabase.from("club_checklists").select("*").order("created_at", { ascending: false }).then(({ data, error }) => {
       if (!alive) return;
-      if (error) setNotice({ kind: "error", message: checklistError(error) });
+      if (error) setErrorMessage(checklistError(error));
       else setChecklists(data as ClubChecklist[]);
       setLoading(false);
     });
@@ -267,7 +266,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
     setSelectedId(id);
     setFilter("all");
     setSearch("");
-    setNotice(null);
+    setErrorMessage("");
     void loadEntries(id);
   }
   function replaceEntry(entry: ChecklistEntry) {
@@ -275,22 +274,21 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
   }
   async function togglePaid(entry: ChecklistEntry) {
     if (!selected || selected.archived || !acquire(entry.id)) return;
-    setNotice(null);
+    setErrorMessage("");
     const { data, error } = await supabase.from("club_checklist_entries").update({ is_paid: !entry.is_paid }).eq("id", entry.id).select().single();
-    if (error) setNotice({ kind: "error", message: checklistError(error) });
-    else { replaceEntry(data as ChecklistEntry); setNotice({ kind: "success", message: `${entry.player_name} 님의 납부 상태를 저장했어요.` }); }
+    if (error) setErrorMessage(checklistError(error));
+    else replaceEntry(data as ChecklistEntry);
     release(entry.id);
   }
   async function toggleArchive() {
     if (!selected || locks.current.size || !acquire(selected.id)) return;
-    setNotice(null);
+    setErrorMessage("");
     const { data, error } = await supabase.from("club_checklists").update({ archived: !selected.archived }).eq("id", selected.id).select().single();
-    if (error) setNotice({ kind: "error", message: checklistError(error) });
+    if (error) setErrorMessage(checklistError(error));
     else {
       const result = data as ClubChecklist;
       setChecklists(current => current.map(item => item.id === result.id ? result : item));
       setScope(result.archived ? "archived" : "active");
-      setNotice({ kind: "success", message: result.archived ? "체크리스트를 보관했어요. 기록은 그대로 남아 있어요." : "체크리스트를 다시 열었어요." });
     }
     release(selected.id);
   }
@@ -310,7 +308,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
         <button disabled={loading || busy || !roster.length} onClick={() => setCreateOpen(true)} className={primaryClass}><Plus className="h-4 w-4" />체크리스트 만들기</button>
       </div>
 
-      {notice && <p role={notice.kind === "error" ? "alert" : "status"} className={`rounded-xl border p-4 text-sm ${notice.kind === "error" ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300" : "border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950/30 dark:text-green-300"}`}>{notice.message}</p>}
+      {errorMessage && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">{errorMessage}</p>}
 
       {!selectedId ? (
         <>
@@ -318,7 +316,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
             <div className="flex rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
               {([['active', '진행 중'], ['archived', '보관함']] as const).map(([value, label]) => <button key={value} onClick={() => setScope(value)} className={`rounded-lg px-4 py-2 text-sm font-bold ${scope === value ? "bg-white shadow-sm dark:bg-gray-700" : "text-gray-500"}`}>{label} {checklists.filter(item => item.archived === (value === "archived")).length}</button>)}
             </div>
-            <button aria-label="체크리스트 새로고침" onClick={() => { setNotice(null); void loadLists(); }} disabled={loading} className={buttonClass}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /><span className="hidden sm:inline">새로고침</span></button>
+            <button aria-label="체크리스트 새로고침" onClick={() => { setErrorMessage(""); void loadLists(); }} disabled={loading} className={buttonClass}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /><span className="hidden sm:inline">새로고침</span></button>
           </div>
           {loading ? <p role="status" className="py-16 text-center text-gray-500">체크리스트를 불러오는 중…</p> : (
             <div className="grid gap-4 md:grid-cols-2">
@@ -339,7 +337,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
       ) : selected ? (
         <>
           <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-            <button disabled={busy} onClick={() => { detailRequest.current++; setSelectedId(null); setNotice(null); }} className="mb-4 flex items-center gap-1 text-sm text-gray-500 disabled:opacity-50"><ArrowLeft className="h-4 w-4" />목록으로</button>
+            <button disabled={busy} onClick={() => { detailRequest.current++; setSelectedId(null); setErrorMessage(""); }} className="mb-4 flex items-center gap-1 text-sm text-gray-500 disabled:opacity-50"><ArrowLeft className="h-4 w-4" />목록으로</button>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="break-all text-xl font-black">{selected.title}</h2>
               <div className="flex flex-wrap gap-2">
@@ -350,7 +348,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
             {selected.description && <p className="mt-3 whitespace-pre-wrap break-all text-sm text-gray-500">{selected.description}</p>}
             {selected.archived && <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">보관된 기록이에요. 수정하려면 ‘다시 열기’를 눌러주세요.</p>}
           </div>
-          {detailLoading ? <p role="status" className="py-16 text-center text-gray-500">회원 기록을 불러오는 중…</p> : detailError ? <button onClick={() => { setNotice(null); void loadEntries(selected.id); }} className={buttonClass}><RefreshCw className="h-4 w-4" />다시 불러오기</button> : (
+          {detailLoading ? <p role="status" className="py-16 text-center text-gray-500">회원 기록을 불러오는 중…</p> : detailError ? <button onClick={() => { setErrorMessage(""); void loadEntries(selected.id); }} className={buttonClass}><RefreshCw className="h-4 w-4" />다시 불러오기</button> : (
             <>
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 {[
@@ -363,7 +361,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative min-w-36 flex-1"><Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" /><input aria-label="체크리스트 회원 검색" placeholder="이름 검색" value={search} onChange={event => setSearch(event.target.value)} className={`${inputClass} pl-9`} /></div>
                 <select aria-label="납부 상태 필터" value={filter} onChange={event => setFilter(event.target.value as typeof filter)} className={inputClass.replace("w-full", "w-28 shrink-0")}><option value="all">전체</option><option value="unpaid">미납 X</option><option value="paid">납부 O</option></select>
-                <button aria-label="회원 기록 새로고침" disabled={busy} onClick={() => { setNotice(null); void loadEntries(selected.id); }} className={buttonClass}><RefreshCw className="h-4 w-4" /></button>
+                <button aria-label="회원 기록 새로고침" disabled={busy} onClick={() => { setErrorMessage(""); void loadEntries(selected.id); }} className={buttonClass}><RefreshCw className="h-4 w-4" /></button>
                 {!selected.archived && <button disabled={busy || !available.length} onClick={() => setAddOpen(true)} className={buttonClass}><Users className="h-4 w-4" />회원 추가</button>}
               </div>
               <p className="text-xs text-gray-500">{visible.length}명 표시 · 납부 O/X를 누르면 바로 저장돼요. 주문 내용은 ‘수정’에서 입력하세요.</p>
@@ -407,10 +405,10 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
         setCreateOpen(false);
         setScope("active");
         const loaded = await loadLists();
-        if (loaded) { openList(id); setNotice({ kind: "success", message: "체크리스트를 만들었어요." }); }
+        if (loaded) openList(id);
       }} />}
-      {editing && selected && <EntryDialog entry={editing} checklist={selected} onClose={() => setEditing(null)} onSaved={entry => { replaceEntry(entry); setEditing(null); setNotice({ kind: "success", message: `${entry.player_name} 님의 주문 정보를 저장했어요.` }); }} />}
-      {addOpen && selected && <AddMembersDialog players={available} checklistId={selected.id} onClose={() => setAddOpen(false)} onSaved={() => { setAddOpen(false); void loadEntries(selected.id); setNotice({ kind: "success", message: "대상 회원을 추가했어요." }); }} />}
+      {editing && selected && <EntryDialog entry={editing} checklist={selected} onClose={() => setEditing(null)} onSaved={entry => { replaceEntry(entry); setEditing(null); setErrorMessage(""); }} />}
+      {addOpen && selected && <AddMembersDialog players={available} checklistId={selected.id} onClose={() => setAddOpen(false)} onSaved={() => { setAddOpen(false); void loadEntries(selected.id); setErrorMessage(""); }} />}
       {deleteTarget && <DeleteDialog checklist={deleteTarget} onClose={() => setDeleteTarget(null)} onDeleted={id => {
         setChecklists(current => current.filter(item => item.id !== id));
         if (selectedId === id) {
@@ -421,7 +419,7 @@ export default function ChecklistManager({ players }: { players: Player[] }) {
           setDetailError(false);
         }
         setDeleteTarget(null);
-        setNotice({ kind: "success", message: "체크리스트와 관련 주문·납부 기록을 삭제했어요." });
+        setErrorMessage("");
       }} />}
     </section>
   );
