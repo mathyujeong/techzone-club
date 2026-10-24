@@ -13,7 +13,7 @@ const players = [
   {"Name":"박미자","Grade":"C"}, {"Name":"박수신","Grade":"E"}, {"Name":"박지윤","Grade":"S"},
   {"Name":"박진현","Grade":"A"}, {"Name":"배진희","Grade":"E"}, {"Name":"배형남","Grade":"E"},
   {"Name":"백숙호","Grade":"D"}, {"Name":"손병근","Grade":"E"}, {"Name":"송온유","Grade":"D"},
-  {"Name":"송지은","Grade":"E"}, {"Name":"송환희","Grade":"D"}, {"Name":"신나리","Grade":"S"},
+  {"Name":"송환희","Grade":"D"}, {"Name":"신나리","Grade":"S"},
   {"Name":"양하나","Grade":"A"}, {"Name":"오성환","Grade":"E"}, {"Name":"유반석","Grade":"B"},
   {"Name":"유소라","Grade":"A"}, {"Name":"이정훈","Grade":"B"}, {"Name":"이청아","Grade":"C"},
   {"Name":"장상원","Grade":"E"}, {"Name":"장성학","Grade":"A"}, {"Name":"전영배","Grade":"E"},
@@ -26,13 +26,13 @@ async function run() {
   for (const p of players) {
     const { data, error } = await supabase.from('players').upsert(
       { name: p.Name, grade: p.Grade },
-      { onConflict: 'name' }
+      { onConflict: 'name', ignoreDuplicates: true }
     );
     if (error) {
       console.error('Error inserting', p.Name, error);
     }
   }
-  console.log('Finished inserting 39 players.');
+  console.log('Finished registering 38 players without overwriting existing grades.');
 }
 
 run();

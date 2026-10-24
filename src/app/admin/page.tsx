@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import ChecklistManager from "@/components/ChecklistManager";
 
 import { generateMatches } from '@/lib/matchMaker';
 import { Player } from '@/lib/types';
@@ -14,6 +15,7 @@ const ADMIN_EMAIL = 'admin@techzone.club';
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
+  const [adminView, setAdminView] = useState<'tournaments' | 'checklists'>('tournaments');
   const [pwd, setPwd] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -66,6 +68,8 @@ export default function AdminPage() {
 
   const [isPlayerManageModalOpen, setIsPlayerManageModalOpen] = useState(false);
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [registerAsMember, setRegisterAsMember] = useState(false);
+  const [savingMember, setSavingMember] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{type: 'tournament'|'match', id: string} | null>(null);
   const [deleteCode, setDeleteCode] = useState("");
   const [guestName, setGuestName] = useState("");
@@ -83,6 +87,7 @@ export default function AdminPage() {
 
   
   const handleAddNewTournament = async () => {
+    setAdminView('tournaments');
     const { data, error } = await supabase.from('tournaments').insert({ title: '새 월례회' }).select().single();
     if (data) {
       setTournaments([data, ...tournaments]);
@@ -131,7 +136,8 @@ export default function AdminPage() {
   };
 
   // --- Player Management ---
-  const openGuestModal = () => {
+  const openGuestModal = (asMember = false) => {
+    setRegisterAsMember(asMember);
     setGuestName("");
     setGuestGrade("E");
     setGuestGender("M");
@@ -139,7 +145,22 @@ export default function AdminPage() {
   };
 
   const saveGuest = async () => {
-    if (!guestName.trim()) return;
+    if (!guestName.trim() || savingMember) return;
+    if (registerAsMember) {
+      setSavingMember(true);
+      const { data, error } = await supabase.from('players').insert({
+        name: guestName.trim(), grade: guestGrade, gender: guestGender, default_penalty: 0,
+      }).select().single();
+      setSavingMember(false);
+      if (error) {
+        alert(error.code === '23505' ? '이미 등록된 회원 이름입니다.' : '회원 등록 실패: ' + error.message);
+        return;
+      }
+      setDbPlayers(current => [...current, data].sort((a, b) => a.grade.localeCompare(b.grade)));
+      setSelectedPlayerIds(current => new Set([...current, data.id]));
+      setIsGuestModalOpen(false);
+      return;
+    }
     
     const fakeGuest = {
       id: `guest_${Date.now()}`,
@@ -158,8 +179,11 @@ export default function AdminPage() {
   };
 
   const updatePlayer = async (id: string, updates: any) => {
-    await supabase.from('players').update(updates).eq('id', id);
-    setDbPlayers(dbPlayers.map(p => p.id === id ? { ...p, ...updates } : p).sort((a, b) => a.grade.localeCompare(b.grade)));
+    if (!id.startsWith('guest_')) {
+      const { error } = await supabase.from('players').update(updates).eq('id', id).select().single();
+      if (error) { alert('회원 정보 저장 실패: ' + error.message); return; }
+    }
+    setDbPlayers(current => current.map(p => p.id === id ? { ...p, ...updates } : p).sort((a, b) => a.grade.localeCompare(b.grade)));
   };
 
   async function fetchPlayersAndTournaments() {
@@ -462,7 +486,7 @@ export default function AdminPage() {
         <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-xl w-full max-w-sm text-center border border-gray-200 dark:border-gray-800">
           <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-6" />
           <h1 className="text-2xl font-black mb-2">관리자 모드</h1>
-          <p className="text-gray-500 mb-8 text-sm">경기 점수 조작 및 대진표 관리</p>
+          <p className="text-gray-500 mb-8 text-sm">대진표 · 회원 명단 · 주문 및 납부 관리</p>
           <input 
             type="password" 
             value={pwd} 
@@ -562,8 +586,11 @@ export default function AdminPage() {
         </div>
         
         <div className="p-4 border-b border-gray-200 dark:border-gray-800 pt-0">
-          <button onClick={() => setIsPlayerManageModalOpen(true)} className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+          <button onClick={() => { setAdminView('tournaments'); setIsPlayerManageModalOpen(true); }} className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
             <UsersIcon className="w-4 h-4" /> 회원 명단 관리
+          </button>
+          <button onClick={() => setAdminView('checklists')} className={`mt-3 w-full px-4 py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-colors ${adminView === 'checklists' ? 'bg-yellow-600 text-white' : 'bg-yellow-50 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-950/40 dark:text-yellow-400 dark:hover:bg-yellow-950/70'}`}>
+            <CheckSquare className="w-4 h-4" /> 체크리스트 관리
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -571,8 +598,8 @@ export default function AdminPage() {
           {tournaments.map(t => (
             <button 
               key={t.id}
-              onClick={() => setSelectedTournamentId(t.id)}
-              className={`w-full text-left p-3 rounded-xl transition-colors flex flex-col gap-1 ${selectedTournamentId === t.id ? 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'}`}
+              onClick={() => { setAdminView('tournaments'); setSelectedTournamentId(t.id); }}
+              className={`w-full text-left p-3 rounded-xl transition-colors flex flex-col gap-1 ${adminView === 'tournaments' && selectedTournamentId === t.id ? 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'}`}
             >
               <div className="flex flex-col gap-1 w-full">
                 <div className="flex items-center justify-between w-full">
@@ -632,7 +659,8 @@ export default function AdminPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto h-screen pb-20">
+      <main className="min-w-0 flex-1 overflow-y-auto md:h-screen pb-20">
+        {adminView === 'checklists' ? <ChecklistManager players={dbPlayers} /> : <>
 
             {editMatchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -1256,7 +1284,7 @@ export default function AdminPage() {
                     <button onClick={() => setSelectedPlayerIds(new Set())} className="flex-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 px-2 py-2 rounded-lg flex items-center justify-center gap-1 font-bold">
                       <Square className="w-4 h-4" /> 전체해제
                     </button>
-                    <button onClick={openGuestModal} className="flex-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-2 rounded-lg flex items-center justify-center gap-1 font-bold">
+                    <button onClick={() => openGuestModal()} className="flex-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-2 rounded-lg flex items-center justify-center gap-1 font-bold">
                       <UserPlus className="w-4 h-4" /> 게스트 추가
                     </button>
                   </div>
@@ -1444,13 +1472,13 @@ export default function AdminPage() {
             
             <div className="p-6 flex-1 overflow-y-auto space-y-3 bg-gray-50 dark:bg-gray-950">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold">총 {dbPlayers.length}명</h3>
-                <button onClick={openGuestModal} className="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 hover:bg-blue-700">
+                <h3 className="font-bold">총 {dbPlayers.filter(p => !p.id.startsWith('guest_')).length}명</h3>
+                <button onClick={() => openGuestModal(true)} className="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 hover:bg-blue-700">
                   <UserPlus className="w-4 h-4" /> 새 회원 등록
                 </button>
               </div>
 
-              {dbPlayers.map(p => (
+              {dbPlayers.filter(p => !p.id.startsWith('guest_')).map(p => (
                 <div key={p.id} className="flex items-center justify-between bg-white dark:bg-gray-900 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
                   <span className="font-bold">{p.name}</span>
                   <div className="flex items-center gap-3">
@@ -1608,9 +1636,9 @@ export default function AdminPage() {
           <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-gray-100 dark:border-gray-800">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
-                <UserPlus className="text-blue-600 w-6 h-6" /> 새 게스트 추가
+                <UserPlus className="text-blue-600 w-6 h-6" /> {registerAsMember ? '새 회원 등록' : '새 게스트 추가'}
               </h2>
-              <button onClick={() => setIsGuestModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+              <button disabled={savingMember} aria-label="회원 등록창 닫기" onClick={() => setIsGuestModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full disabled:opacity-50">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1620,6 +1648,8 @@ export default function AdminPage() {
                 <input 
                   type="text" 
                   value={guestName} 
+                  maxLength={100}
+                  disabled={savingMember}
                   onChange={(e) => setGuestName(e.target.value)} 
                   placeholder="홍길동"
                   autoFocus
@@ -1632,6 +1662,7 @@ export default function AdminPage() {
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">성별</label>
                   <select 
                     value={guestGender} 
+                    disabled={savingMember}
                     onChange={(e) => setGuestGender(e.target.value as 'M'|'F')}
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all font-medium cursor-pointer appearance-none"
                   >
@@ -1644,6 +1675,7 @@ export default function AdminPage() {
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">급수</label>
                   <select 
                     value={guestGrade} 
+                    disabled={savingMember}
                     onChange={(e) => setGuestGrade(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all font-medium cursor-pointer appearance-none"
                 >
@@ -1660,10 +1692,10 @@ export default function AdminPage() {
             </div>
             <button 
               onClick={saveGuest}
-              disabled={!guestName.trim()}
+              disabled={!guestName.trim() || savingMember}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-md"
             >
-              추가하기
+              {savingMember ? '저장 중…' : registerAsMember ? '회원 등록하기' : '게스트 추가하기'}
             </button>
           </div>
         </div>
@@ -1712,6 +1744,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+        </>}
       </main>
     </div>
   );

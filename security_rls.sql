@@ -1,4 +1,4 @@
--- 보안 강화: 누구나 읽기만 가능, 쓰기/수정/삭제는 관리자 계정만 가능
+-- 보안 강화: 대진표는 공개 조회, 주문/납부는 관리자 전용. 쓰기/수정/삭제는 관리자만 가능.
 -- Supabase Dashboard > SQL Editor 에서 실행하세요.
 -- (먼저 Authentication > Users 에서 admin@techzone.club 계정을 만들어야 합니다)
 
@@ -15,8 +15,10 @@ begin
       execute format('drop policy %I on public.%I', p.policyname, t.tablename);
     end loop;
 
-    -- 누구나 조회 가능 (공개 페이지용)
-    execute format('create policy "public_read" on public.%I for select using (true)', t.tablename);
+    -- 주문/납부 테이블은 관리자 전용입니다. 대진표 등 공개 테이블만 조회를 허용합니다.
+    if t.tablename not in ('club_checklists', 'club_checklist_entries') then
+      execute format('create policy "public_read" on public.%I for select using (true)', t.tablename);
+    end if;
 
     -- 관리자 계정만 추가/수정/삭제 가능
     execute format(

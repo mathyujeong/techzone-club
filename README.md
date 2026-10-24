@@ -1,3 +1,5 @@
+테크존 배드민턴 클럽 사이트입니다. 주문·납부 체크리스트 기능의 DB 적용 및 사용법은 [CHECKLIST_SETUP.md](./CHECKLIST_SETUP.md)를 참고하세요.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
